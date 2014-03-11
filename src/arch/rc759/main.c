@@ -324,6 +324,17 @@ int main (int argc, char *argv[])
 		}
 	}
 
+	int emscripten;
+	emscripten = 0;
+	#ifdef EMSCRIPTEN
+		// replace command line arg settings
+		pce_log_set_level (stderr, MSG_DEB);
+		cfg = "roms/pce-config.cfg";
+		// run = 1;
+		// nomon = 1;
+		emscripten = 1;
+	#endif
+	
 	rc759_log_banner();
 
 	if (pce_load_config (par_cfg, cfg)) {
@@ -368,6 +379,10 @@ int main (int argc, char *argv[])
 
 	rc759_reset (par_sim);
 
+	if (emscripten || 1) {
+		rc759_run_emscripten(par_sim);
+		exit(1);
+	}
 	if (nomon) {
 		while (par_sim->brk != PCE_BRK_ABORT) {
 			rc759_run (par_sim);

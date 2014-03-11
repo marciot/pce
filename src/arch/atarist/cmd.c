@@ -482,7 +482,13 @@ void st_run (atari_st_t *sim)
  * store global reference to simulation state struct
  * so that st_run_emscripten_step doesn't require it as a parameter
  */
+#ifdef __cplusplus 
+extern "C" {
+atari_st_t *st_get_sim();
+}
+#endif
 atari_st_t  *atari_st_sim = NULL;
+atari_st_t *st_get_sim() {return atari_st_sim;};
 
 /*
  * setup and run the simulation
