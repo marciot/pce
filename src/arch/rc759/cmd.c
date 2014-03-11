@@ -533,6 +533,66 @@ void rc759_run (rc759_t *sim)
 	pce_stop();
 }
 
+/*
+ * emscripten specific main loop
+ */
+
+/*
+ * store global pointer to simulation state struct
+ * so that pc_run_emscripten_step doesn't require it as a parameter
+ */
+rc759_t *rc759_sim = NULL;
+
+/*
+ * setup and run the simulation
+ */
+void rc759_run_emscripten (rc759_t *sim)
+{
+	rc759_sim = sim;
+
+	pce_start (&sim->brk);
+
+	rc759_clock_discontinuity (sim);
+
+	#ifdef EMSCRIPTEN
+	emscripten_set_main_loop(rc759_run_emscripten_step, 100, 1);
+	#else
+	while (!sim->brk) {
+		rc759_run_emscripten_step();
+	}
+	#endif
+
+	sim->current_int &= 0xff;
+	// pce_stop();
+}
+
+/*
+ * run one iteration
+ */
+void rc759_run_emscripten_step ()
+{
+
+	// for each 'emscripten step' we'll run a bunch of actual cycles
+	// to minimise overhead from emscripten's main loop management
+	int i;
+	for (i = 0; i < 10000; ++i)
+	{
+		rc759_clock (rc759_sim, 8);
+
+		if (rc759_sim->brk) {
+			pce_stop();
+			#ifdef EMSCRIPTEN
+			emscripten_cancel_main_loop();
+			#endif
+			return;
+		}
+	}
+}
+/*
+ * end emscripten specific main loop
+ */
+
+
 static
 void pce_op_int (void *ext, unsigned char n)
 {
