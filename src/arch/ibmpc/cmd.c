@@ -534,7 +534,13 @@ void pc_run (ibmpc_t *pc)
  * store global pointer to simulation state struct
  * so that pc_run_emscripten_step doesn't require it as a parameter
  */
+#ifdef __cplusplus 
+extern "C" {
+ibmpc_t *pc_get_sim();
+}
+#endif
 ibmpc_t *ibmpc_sim = NULL;
+ibmpc_t *pc_get_sim() {return ibmpc_sim;};
 
 /*
  * setup and run the simulation

@@ -398,7 +398,13 @@ void mac_run (macplus_t *sim)
  * store global reference to simulation state struct
  * so that mac_run_emscripten_step doesn't require it as a parameter
  */
-macplus_t  *macplus_sim = NULL;
+#ifdef __cplusplus 
+extern "C" {
+macplus_t *mac_get_sim();
+}
+#endif
+macplus_t *macplus_sim = NULL;
+macplus_t *mac_get_sim() {return macplus_sim;};
 
 /*
  * setup and run the simulation
