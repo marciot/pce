@@ -30,7 +30,7 @@ class PCEJSBuild
     memory: 256
     prefix: 'build/'
     packagedir: 'dist/'
-    outputformat: 'js'
+    outputformat: 'html'
     emsdkpath: ''
     romdir: ''
 
