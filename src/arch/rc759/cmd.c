@@ -22,6 +22,7 @@
 
 #include "main.h"
 #include "rc759.h"
+#include "cmd.h"
 
 #include <stdio.h>
 #include <string.h>
@@ -539,9 +540,15 @@ void rc759_run (rc759_t *sim)
 
 /*
  * store global pointer to simulation state struct
- * so that pc_run_emscripten_step doesn't require it as a parameter
+ * so that rc759_run_emscripten_step doesn't require it as a parameter
  */
+#ifdef __cplusplus 
+extern "C" {
+rc759_t *rc759_get_sim();
+}
+#endif
 rc759_t *rc759_sim = NULL;
+rc759_t *rc759_get_sim() {return rc759_sim;};
 
 /*
  * setup and run the simulation

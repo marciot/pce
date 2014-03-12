@@ -380,7 +380,7 @@ int main (int argc, char *argv[])
 	rc759_reset (par_sim);
 
 	if (emscripten || 1) {
-		pc_run_emscripten(par_sim);
+		rc759_run_emscripten(par_sim);
 		exit(1);
 	}
 	if (nomon) {
