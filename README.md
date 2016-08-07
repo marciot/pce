@@ -18,6 +18,11 @@ This code is derived from James Friend's [PCE.js](https://github.com/jsdf/pce), 
 2. Exposed to JavaScript the ability to send messages to the emulator via *_set_msg to allow for disk insertion.
 3. Exposed some of the e8530.c routines to JavaScript to support LocalTalk emulation
 
+## How does this code differ from James Friend's PCE.js?
+
+1. James build scripts and UI have been removed, since this functionality is provided by [retroweb-vintage-computer-museum](https://github.com/marciot/retroweb-vintage-computer-museum).
+2. Build instructions have been revised for the Emscripten available as of August 7, 2016 (emcc version 1.36.0)
+
 ## Build instructions
 
 Make sure you have a working version of Emscripten. Do this by following the [Emscripten tutorial](https://kripken.github.io/emscripten-site/index.html).
@@ -38,6 +43,7 @@ git clone https://github.com/marciot/retroweb-pcejs-jsdf.git
 cd retroweb-pcejs-jsdf
 
 emconfigure ./configure    \
+   --disable-cpm80         \
    --disable-sims32        \
    --disable-simarm        \
    --disable-sim405        \
@@ -78,3 +84,16 @@ sed pce-atarist.js -i -e 's/function _SDL_CreateRGBSurfaceFrom/function _SDL_Cre
 
 The "pce-xxx.js" files can be used as drop in replacements for those in the "emulators/pce-xxx" directories of the
 [retroweb-vintage-computer-museum](https://github.com/marciot/retroweb-vintage-computer-museum) distribution.
+
+## How do I pull changes from the upstream repository?
+
+Although James Friend no longer updates his PCE.js port, Hampa Hug continues to do work on the emulator code. I have only tested the code included in my GitHub repository, but if you would like to merge upstream changes yourself, you may do so by issuing the following commands:
+
+```
+~/retroweb-pcejs-jsdf$ git remote add upstream git://git.hampa.ch/pce.git
+~/retroweb-pcejs-jsdf$ git remote -v
+~/retroweb-pcejs-jsdf$ git fetch upstream
+~/retroweb-pcejs-jsdf$ git merge upstream/master
+```
+
+Reference: https://help.github.com/articles/syncing-a-fork/
