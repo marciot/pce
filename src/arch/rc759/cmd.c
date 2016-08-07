@@ -34,6 +34,9 @@
 #include <lib/monitor.h>
 #include <lib/sysdep.h>
 
+#ifdef EMSCRIPTEN
+#include <emscripten.h>
+#endif
 
 static mon_cmd_t par_cmd[] = {
 	{ "c", "[cnt]", "clock the simulation [1]" },
@@ -544,18 +547,18 @@ void rc759_run (rc759_t *sim)
  */
 #ifdef __cplusplus 
 extern "C" {
-rc759_t *rc759_get_sim();
+rc759_t *rc_get_sim();
 }
 #endif
-rc759_t *rc759_sim = NULL;
-rc759_t *rc759_get_sim() {return rc759_sim;};
+rc759_t *rc_sim = NULL;
+rc759_t *rc_get_sim() {return rc_sim;};
 
 /*
  * setup and run the simulation
  */
 void rc759_run_emscripten (rc759_t *sim)
 {
-	rc759_sim = sim;
+	rc_sim = sim;
 
 	pce_start (&sim->brk);
 
@@ -584,9 +587,9 @@ void rc759_run_emscripten_step ()
 	int i;
 	for (i = 0; i < 10000; ++i)
 	{
-		rc759_clock (rc759_sim, 8);
+		rc759_clock (rc_sim, 8);
 
-		if (rc759_sim->brk) {
+		if (rc_sim->brk) {
 			pce_stop();
 			#ifdef EMSCRIPTEN
 			emscripten_cancel_main_loop();

@@ -27,6 +27,10 @@
 #include <stdio.h>
 #include <string.h>
 
+#ifdef EMSCRIPTEN
+#include <emscripten.h>
+#endif
+
 #include <lib/brkpt.h>
 #include <lib/cmd.h>
 #include <lib/console.h>

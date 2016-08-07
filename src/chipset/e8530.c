@@ -25,9 +25,9 @@
 
 #include "e8530.h"
 
-
-#define DEBUG_SCC 0
-
+#ifdef EMSCRIPTEN
+#include <emscripten.h>
+#endif
 
 #define scc_get_chn(chn) (((chn) == 0) ? 'A' : 'B')
 
@@ -84,6 +84,11 @@ void e8530_init (e8530_t *scc)
 	scc->irq_ext = NULL;
 	scc->irq = NULL;
 	scc->irq_val = 0;
+#ifdef EMSCRIPTEN
+	EM_ASM_({
+		e8530_init_js($0)
+	},scc);
+#endif
 }
 
 void e8530_free (e8530_t *scc)
@@ -1230,6 +1235,11 @@ void e8530_chn_clock (e8530_t *scc, unsigned chn, unsigned n)
 
 void e8530_clock (e8530_t *scc, unsigned n)
 {
+#ifdef EMSCRIPTEN
+	EM_ASM_({
+		e8530_chn_clock_js($0)
+	},n);
+#endif
 	e8530_chn_clock (scc, 0, n);
 	e8530_chn_clock (scc, 1, n);
 }

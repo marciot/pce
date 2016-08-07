@@ -38,7 +38,9 @@
 
 #include <SDL.h>
 
-// #include <emscripten.h>
+#ifdef EMSCRIPTEN
+#include <emscripten.h>
+#endif
 
 mon_cmd_t par_cmd[] = {
 	{ "c", "[cnt]", "clock" },

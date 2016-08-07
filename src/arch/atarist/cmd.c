@@ -37,6 +37,10 @@
 #define DEBUG_BIOS 1
 #endif
 
+#ifdef EMSCRIPTEN
+#include <emscripten.h>
+#endif
+
 
 mon_cmd_t par_cmd[] = {
 	{ "c", "[cnt]", "clock" },
