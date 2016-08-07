@@ -163,6 +163,39 @@ int snd_oss_set_params (sound_drv_t *sdrv, unsigned chn, unsigned long srate, in
 }
 
 static
+int snd_oss_set_opts (sound_drv_t *sdrv, unsigned opts, int val)
+{
+	sound_oss_t *drv;
+
+	drv = sdrv->ext;
+
+	if (opts & SND_OPT_NONBLOCK) {
+		int v;
+
+		if (drv->fd < 0) {
+			return (1);
+		}
+
+		if ((v = fcntl (drv->fd, F_GETFL)) == -1) {
+			return (1);
+		}
+
+		if (val) {
+			v |= O_NONBLOCK;
+		}
+		else {
+			v &= ~O_NONBLOCK;
+		}
+
+		if (fcntl (drv->fd, F_SETFL, v) == -1) {
+			return (1);
+		}
+	}
+
+	return (0);
+}
+
+static
 int snd_oss_init (sound_oss_t *drv, const char *name)
 {
 	snd_init (&drv->sdrv, drv);
@@ -170,12 +203,13 @@ int snd_oss_init (sound_oss_t *drv, const char *name)
 	drv->sdrv.close = snd_oss_close;
 	drv->sdrv.write = snd_oss_write;
 	drv->sdrv.set_params = snd_oss_set_params;
+	drv->sdrv.set_opts = snd_oss_set_opts;
 
 	drv->fd = -1;
 	drv->dev = drv_get_option (name, "dev");
 
 	if (drv->dev == NULL) {
-		return (1);
+		drv->dev = strdup ("/dev/dsp");
 	}
 
 	drv->fd = open (drv->dev, O_WRONLY | O_NDELAY, 0);

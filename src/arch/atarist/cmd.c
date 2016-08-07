@@ -53,7 +53,7 @@ mon_cmd_t par_cmd[] = {
 	{ "reset", "", "reset" },
 	{ "rte", "", "execute to next rte" },
 	{ "r", "reg [val]", "get or set a register" },
-	{ "s", "[what]", "print status (cpu|mem)" },
+	{ "s", "[what]", "print status (acia0|acia1|cpu|dma|mem|mfp|psg|video)" },
 	{ "t", "[cnt]", "execute cnt instructions [1]" },
 	{ "u", "[[-]addr [cnt]]", "disassemble" }
 };
@@ -257,8 +257,8 @@ void st_print_state_mfp (atari_st_t *sim)
 		mfp->gpip_inp, mfp->gpip_xor, mfp->gpip_val, mfp->gpip_aer, mfp->gpip_ddr
 	);
 
-	pce_printf ("INTR: IRR=%04X IER=%04X IPR=%04X IMR=%04X ISR=%04X IVR=%02X VEC=%02X IRQ=%d\n",
-		mfp->irr, mfp->ier, mfp->ipr, mfp->imr, mfp->isr, mfp->ivr, mfp->vec, mfp->irq_val
+	pce_printf ("INTR: IRR=%04X/%04X IER=%04X IPR=%04X IMR=%04X ISR=%04X IVR=%02X VEC=%02X IRQ=%d\n",
+		mfp->irr1, mfp->irr2, mfp->ier, mfp->ipr, mfp->imr, mfp->isr, mfp->ivr, mfp->vec, mfp->irq_val
 	);
 
 	pce_printf ("UART: PAR=%u%c%u UCR=%02X RSR=%02X RDR=%02X TSR=%02X TDR=%02X RCLK=%u/%u SCLK=%u/%u\n",
@@ -304,8 +304,8 @@ void st_print_state_dma (atari_st_t *sim)
 
 	pce_prt_sep ("DMA");
 
-	pce_printf ("MODE=%04X  STATUS=%04X  ADDR=%06lX\n",
-		dma->mode, dma->status, dma->addr
+	pce_printf ("MODE=%04X  STATUS=%04X  ADDR=%06lX  MASK=%06lX\n",
+		dma->mode, dma->status, dma->addr, dma->mask
 	);
 }
 
@@ -314,6 +314,75 @@ void st_print_state_mem (atari_st_t *sim)
 {
 	pce_prt_sep ("MEM");
 	mem_prt_state (sim->mem, stdout);
+}
+
+static
+void st_print_state_psg (atari_st_t *sim)
+{
+	st_psg_t *psg;
+
+	pce_prt_sep ("PSG");
+
+	psg = &sim->psg;
+
+	pce_printf ("R%02X=%02X  PA=%u\n", 0, psg->reg[0],
+		((psg->reg[1] << 8) | (psg->reg[0])) & 0x3ff
+	);
+
+	pce_printf ("R%02X=%02X\n", 1, psg->reg[1]);
+
+	pce_printf ("R%02X=%02X  PB=%u\n", 2, psg->reg[2],
+		((psg->reg[3] << 8) | (psg->reg[2])) & 0x3ff
+	);
+
+	pce_printf ("R%02X=%02X\n", 3, psg->reg[3]);
+
+	pce_printf ("R%02X=%02X  PC=%u\n", 4, psg->reg[4],
+		((psg->reg[5] << 8) | (psg->reg[4])) & 0x3ff
+	);
+
+	pce_printf ("R%02X=%02X\n", 5, psg->reg[5]);
+
+	pce_printf ("R%02X=%02X  PN=%u\n", 6, psg->reg[6],
+		psg->reg[6] & 0x1f
+	);
+
+	pce_printf ("R%02X=%02X  N=%c%c%c  T=%c%c%c\n", 7, psg->reg[7],
+		(psg->reg[7] & 8) ? 'a' : 'A',
+		(psg->reg[7] & 16) ? 'b' : 'B',
+		(psg->reg[7] & 32) ? 'c' : 'C',
+		(psg->reg[7] & 1) ? 'a' : 'A',
+		(psg->reg[7] & 2) ? 'b' : 'B',
+		(psg->reg[7] & 4) ? 'c' : 'C'
+	);
+
+	pce_printf ("R%02X=%02X  VA=%u  %c\n", 8, psg->reg[8],
+		psg->reg[8] & 0x0f,
+		(psg->reg[8] & 0x10) ? 'M' : '-'
+	);
+
+	pce_printf ("R%02X=%02X  VB=%u  %c\n", 9, psg->reg[9],
+		psg->reg[9] & 0x0f,
+		(psg->reg[9] & 0x10) ? 'M' : '-'
+	);
+
+	pce_printf ("R%02X=%02X  VC=%u  %c\n", 10, psg->reg[10],
+		psg->reg[10] & 0x0f,
+		(psg->reg[10] & 0x10) ? 'M' : '-'
+	);
+
+	pce_printf ("R%02X=%02X  PE=%u\n", 11, psg->reg[11],
+		((psg->reg[12] << 8) | (psg->reg[11])) & 0xffff
+	);
+
+	pce_printf ("R%02X=%02X\n", 12, psg->reg[12]);
+
+	pce_printf ("R%02X=%02X  ENV=%X\n", 13, psg->reg[13],
+		psg->reg[13] & 0x0f
+	);
+
+	pce_printf ("R%02X=%02X\n", 14, psg->reg[14]);
+	pce_printf ("R%02X=%02X\n", 15, psg->reg[15]);
 }
 
 static
@@ -379,6 +448,9 @@ void st_print_state (atari_st_t *sim, const char *str)
 		}
 		else if (cmd_match (&cmd, "mfp")) {
 			st_print_state_mfp (sim);
+		}
+		else if (cmd_match (&cmd, "psg")) {
+			st_print_state_psg (sim);
 		}
 		else if (cmd_match (&cmd, "video")) {
 			st_print_state_video (sim);
@@ -460,7 +532,6 @@ void st_run (atari_st_t *sim)
 	st_clock_discontinuity (sim);
 
 	while (1) {
-		st_clock (par_sim, 0);
 		st_clock (par_sim, 0);
 
 		if (sim->brk) {
@@ -832,17 +903,28 @@ void st_cmd_hm (cmd_t *cmd)
 		"emu.cpu.model        \"68000\" | \"68010\" | \"68020\"\n"
 		"emu.cpu.speed        <factor>\n"
 		"emu.cpu.speed.step   <adjustment>\n"
-			"\n"
+		"\n"
 		"emu.disk.commit      [<drive>]\n"
 		"emu.disk.eject       <drive>\n"
 		"emu.disk.insert      <drive>:<fname>\n"
-			"\n"
+		"\n"
+		"emu.fdc.ro           <drive>\n"
+		"emu.fdc.rw           <drive>\n"
+		"\n"
 		"emu.par.driver       <driver>\n"
 		"emu.par.file         <filename>\n"
-			"\n"
+		"\n"
+		"emu.psg.aym.file     <filename>\n"
+		"emu.psg.aym.res      <usec>\n"
+		"emu.psg.driver       <driver>\n"
+		"emu.psg.lowpass      <freq>\n"
+		"\n"
 		"emu.ser.driver       <driver>\n"
 		"emu.ser.file         <filename>\n"
-			"\n"
+		"\n"
+		"emu.viking           \"0\" | \"1\"\n"
+		"emu.viking.toggle\n"
+		"\n"
 		"term.fullscreen      \"0\" | \"1\"\n"
 		"term.fullscreen.toggle\n"
 		"term.grab\n"

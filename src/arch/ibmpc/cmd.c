@@ -5,7 +5,7 @@
 /*****************************************************************************
  * File name:   src/arch/ibmpc/cmd.c                                         *
  * Created:     2010-09-21 by Hampa Hug <hampa@hampa.ch>                     *
- * Copyright:   (C) 2010-2013 Hampa Hug <hampa@hampa.ch>                     *
+ * Copyright:   (C) 2010-2014 Hampa Hug <hampa@hampa.ch>                     *
  *****************************************************************************/
 
 /*****************************************************************************
@@ -1106,9 +1106,10 @@ void pc_cmd_pq (cmd_t *cmd, ibmpc_t *pc)
 static
 void pc_cmd_p (cmd_t *cmd, ibmpc_t *pc)
 {
-	unsigned short seg, ofs;
+	unsigned       cnt;
+	unsigned short seg, ofs, seg2, ofs2;
 	unsigned long  i, n;
-	int            brk;
+	int            brk, skip;
 	e86_disasm_t   op;
 
 	n = 1;
@@ -1133,6 +1134,8 @@ void pc_cmd_p (cmd_t *cmd, ibmpc_t *pc)
 		seg = e86_get_cs (pc->cpu);
 		ofs = e86_get_ip (pc->cpu);
 
+		cnt = pc->cpu->int_cnt;
+
 		while ((e86_get_cs (pc->cpu) == seg) && (e86_get_ip (pc->cpu) == ofs)) {
 			pc_clock (pc, 1);
 
@@ -1146,10 +1149,21 @@ void pc_cmd_p (cmd_t *cmd, ibmpc_t *pc)
 			break;
 		}
 
-		if (op.flags & (E86_DFLAGS_CALL | E86_DFLAGS_LOOP)) {
-			unsigned short ofs2 = ofs + op.dat_n;
+		skip = 0;
 
-			while ((e86_get_cs (pc->cpu) != seg) || (e86_get_ip (pc->cpu) != ofs2)) {
+		if (op.flags & (E86_DFLAGS_CALL | E86_DFLAGS_LOOP)) {
+			seg2 = seg;
+			ofs2 = ofs + op.dat_n;
+			skip = 1;
+		}
+		else if (pc->cpu->int_cnt != cnt) {
+			seg2 = pc->cpu->int_cs;
+			ofs2 = pc->cpu->int_ip;
+			skip = 1;
+		}
+
+		if (skip) {
+			while ((e86_get_cs (pc->cpu) != seg2) || (e86_get_ip (pc->cpu) != ofs2)) {
 				pc_clock (pc, 1);
 
 				if (pc_check_break (pc)) {

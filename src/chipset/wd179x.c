@@ -5,7 +5,7 @@
 /*****************************************************************************
  * File name:   src/chipset/wd179x.c                                         *
  * Created:     2012-07-05 by Hampa Hug <hampa@hampa.ch>                     *
- * Copyright:   (C) 2012-2013 Hampa Hug <hampa@hampa.ch>                     *
+ * Copyright:   (C) 2012-2015 Hampa Hug <hampa@hampa.ch>                     *
  *****************************************************************************/
 
 /*****************************************************************************
@@ -23,6 +23,8 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
+
+#include <drivers/pri/pri.h>
 
 #include "wd179x.h"
 
@@ -67,6 +69,17 @@ void wd179x_drv_init (wd179x_drive_t *drv, unsigned idx)
 	drv->h = 0;
 
 	drv->motor_clock = 0;
+	drv->bit_clock = 1000000;
+	drv->bit_clock_base = 1000000;
+
+	drv->default_track_size = 100000;
+
+	drv->fuzzy_mask = 0;
+
+	drv->index_cnt = 0;
+
+	drv->trk = NULL;
+	drv->evt = NULL;
 
 	drv->trkbuf_mod = 0;
 	drv->trkbuf_idx = 0;
@@ -153,6 +166,21 @@ void wd179x_set_input_clock (wd179x_t *fdc, unsigned long clk)
 void wd179x_set_bit_clock (wd179x_t *fdc, unsigned long clk)
 {
 	fdc->bit_clock = clk;
+
+	fdc->drive[0].bit_clock_base = clk;
+	fdc->drive[0].bit_clock = clk;
+
+	fdc->drive[1].bit_clock_base = clk;
+	fdc->drive[1].bit_clock = clk;
+}
+
+void wd179x_set_default_track_size (wd179x_t *fdc, unsigned drive, unsigned long val)
+{
+	if (val == 0) {
+		val = 100000;
+	}
+
+	fdc->drive[drive & 1].default_track_size = val;
 }
 
 void wd179x_set_auto_motor (wd179x_t *fdc, int val)
@@ -364,13 +392,29 @@ void wd179x_select_head (wd179x_t *fdc, unsigned val, int internal)
 }
 
 static
+void wd179x_init_track (wd179x_t *fdc, wd179x_drive_t *drv)
+{
+	drv->trk = NULL;
+	drv->evt = NULL;
+
+	drv->fuzzy_mask = 0;
+
+	drv->trkbuf_idx = 0;
+	drv->trkbuf_cnt = drv->default_track_size;
+
+	memset (drv->trkbuf, 0, (drv->trkbuf_cnt + 7) / 8);
+}
+
+static
 int wd179x_write_track (wd179x_t *fdc, wd179x_drive_t *drv)
 {
+	unsigned long cnt;
+
 	if (drv->trkbuf_mod == 0) {
 		return (0);
 	}
 
-	if (fdc->write_track == NULL) {
+	if ((fdc->write_track == NULL) || (drv->trk == NULL)) {
 		return (1);
 	}
 
@@ -380,8 +424,17 @@ int wd179x_write_track (wd179x_t *fdc, wd179x_drive_t *drv)
 	);
 #endif
 
-	if (fdc->write_track (fdc->write_track_ext, drv)) {
-		fprintf (stderr, "wd179x: save track failed\n");
+	if (pri_trk_set_size (drv->trk, drv->trkbuf_cnt)) {
+		return (1);
+	}
+
+	pri_trk_set_clock (drv->trk, drv->bit_clock_base / 2);
+
+	cnt = (drv->trk->size + 7) / 8;
+
+	memcpy (drv->trk->data, drv->trkbuf, cnt);
+
+	if (fdc->write_track (fdc->write_track_ext, drv->d, drv->c, drv->h, drv->trk)) {
 		return (1);
 	}
 
@@ -393,6 +446,9 @@ int wd179x_write_track (wd179x_t *fdc, wd179x_drive_t *drv)
 static
 int wd179x_read_track (wd179x_t *fdc, wd179x_drive_t *drv, unsigned h)
 {
+	unsigned long cnt;
+	pri_trk_t     *trk;
+
 	if (drv->trkbuf_mod) {
 		if (wd179x_write_track (fdc, drv)) {
 			return (1);
@@ -415,18 +471,42 @@ int wd179x_read_track (wd179x_t *fdc, wd179x_drive_t *drv, unsigned h)
 	);
 #endif
 
-	if (fdc->read_track (fdc->read_track_ext, drv)) {
+	if (fdc->read_track (fdc->read_track_ext, drv->d, drv->c, drv->h, &trk)) {
 		fprintf (stderr, "WD179X: D=%u SELECT TRACK ERROR (c=%u h=%u)\n",
 			fdc->drv->d, drv->c, drv->h
 		);
 
-		drv->trkbuf_idx = 0;
-		drv->trkbuf_cnt = 1000000 / 6;
-		memset (drv->trkbuf, 0, (drv->trkbuf_cnt + 7) / 8);
+		wd179x_init_track (fdc, drv);
+
 		return (1);
 	}
 
+	drv->trk = trk;
+	drv->evt = trk->evt;
+
+	drv->fuzzy_mask = 0;
+
+	drv->bit_clock = drv->bit_clock_base;
+
 	drv->trkbuf_mod = 0;
+
+	if (pri_trk_get_size (trk) == 0) {
+		wd179x_init_track (fdc, drv);
+
+		drv->trk = trk;
+		drv->evt = trk->evt;
+	}
+	else {
+		cnt = (trk->size + 7) / 8;
+
+		if (cnt > WD179X_TRKBUF_SIZE) {
+			return (1);
+		}
+
+		memcpy (drv->trkbuf, trk->data, cnt);
+
+		drv->trkbuf_cnt = trk->size;
+	}
 
 	if (drv->trkbuf_idx >= drv->trkbuf_cnt) {
 		drv->trkbuf_idx = 0;
@@ -449,6 +529,9 @@ int wd179x_flush (wd179x_t *fdc, unsigned d)
 
 	drv->trkbuf_idx = 0;
 	drv->trkbuf_cnt = 0;
+
+	drv->trk = NULL;
+	drv->evt = NULL;
 
 	return (0);
 }
@@ -488,6 +571,43 @@ void wd179x_move_bit (wd179x_t *fdc, wd179x_drive_t *drv)
 		}
 
 		drv->trkbuf_idx = 0;
+
+		if (drv->trk != NULL) {
+			drv->evt = drv->trk->evt;
+		}
+
+		if ((fdc->cmd & 0xf4) == 0xd4) {
+			/* force interrupt on every index */
+			wd179x_set_irq (fdc, 1);
+		}
+	}
+
+	drv->fuzzy_mask <<= 1;
+
+	while ((drv->evt != NULL) && (drv->evt->pos == drv->trkbuf_idx)) {
+		if (drv->evt->type == PRI_EVENT_CLOCK) {
+			if (drv->evt->val == 0) {
+				drv->bit_clock = drv->bit_clock_base;
+			}
+			else {
+				drv->bit_clock = ((unsigned long long) drv->evt->val * drv->bit_clock_base + 32768) / 65536;
+			}
+
+#if DEBUG_WD179X >= 2
+			fprintf (stderr, "WD179X: clock: %lu\n", drv->bit_clock);
+#endif
+		}
+		else if (drv->evt->type == PRI_EVENT_FUZZY) {
+			unsigned long msk;
+
+			msk = rand();
+			msk = (msk << 10) ^ rand();
+			msk = (msk << 10) ^ rand();
+
+			drv->fuzzy_mask |= drv->evt->val & msk & 0xffffffff;
+		}
+
+		drv->evt = drv->evt->next;
 	}
 }
 
@@ -501,6 +621,10 @@ int wd179x_get_bit (wd179x_t *fdc)
 
 	drv = fdc->drv;
 	val = (drv->trkbuf[drv->trkbuf_idx >> 3] & (0x80 >> (drv->trkbuf_idx & 7))) != 0;
+
+	if (drv->fuzzy_mask & 0x80000000) {
+		val = !val;
+	}
 
 	if (fdc->is_data_bit) {
 		fdc->val = ((fdc->val << 1) | val) & 0xff;
@@ -882,13 +1006,17 @@ void cmd_step_cont (wd179x_t *fdc)
 
 	update = (fdc->cmd & 0x10) != 0;
 
+	if ((fdc->step_dir & 3) == 0) {
+		fdc->step_dir = 2;
+	}
+
 #if DEBUG_WD179X >= 2
 	fprintf (stderr, "WD179X: D=%u CMD[%02X] STEP CONT (dir=%u upd=%d)\n",
 		fdc->drv->d, fdc->cmd, fdc->step_dir, update
 	);
 #endif
 
-	if (fdc->step_dir) {
+	if (fdc->step_dir & 1) {
 		if (update) {
 			fdc->track += 1;
 		}
@@ -897,7 +1025,7 @@ void cmd_step_cont (wd179x_t *fdc)
 			fdc->drv->c += 1;
 		}
 	}
-	else {
+	else if (fdc->step_dir & 2) {
 		if (update) {
 			fdc->track -= 1;
 		}
@@ -924,7 +1052,7 @@ void cmd_step (wd179x_t *fdc, unsigned dir)
 	);
 #endif
 
-	if (dir > 0) {
+	if (dir != 0) {
 		fdc->step_dir = dir;
 	}
 
@@ -989,7 +1117,9 @@ void cmd_read_sector_clock (wd179x_t *fdc)
 			fdc->interrupt_enable = 1;
 
 			if (fdc->read_crc[0] != fdc->read_crc[1]) {
-				fprintf (stderr, "WD179X: READ CRC ERROR (%02X %04X)\n",
+				fprintf (stderr,
+					"WD179X: CRC ERROR SECTOR %u/%u/%u (C=%02X R=%04X)\n",
+					fdc->track, fdc->drv->h, fdc->sector,
 					fdc->read_crc[0], fdc->read_crc[1]
 				);
 
@@ -1037,7 +1167,7 @@ void cmd_read_sector_dam (wd179x_t *fdc)
 		fdc->status &= ~WD179X_ST_RECORD_TYPE;
 	}
 
-	fdc->read_cnt = 128U << fdc->scan_val[3];
+	fdc->read_cnt = 128U << (fdc->scan_val[3] & 3);
 	fdc->read_cnt = 8 * fdc->read_cnt + 16;
 	fdc->clock = cmd_read_sector_clock;
 	fdc->cont = NULL;
@@ -1095,11 +1225,6 @@ void cmd_read_sector_idam (wd179x_t *fdc)
 		return;
 	}
 
-	if (fdc->scan_val[3] > 3) {
-		wd179x_scan_mark_start (fdc);
-		return;
-	}
-
 	fdc->scan_max = 60 * 16;
 
 	wd179x_scan_mark_start (fdc);
@@ -1116,8 +1241,8 @@ void cmd_read_sector (wd179x_t *fdc)
 	h = (fdc->head & 0x80) ? (fdc->head & 0x7f) : ((fdc->cmd >> 1) & 1);
 
 #if DEBUG_WD179X >= 1
-	fprintf (stderr, "WD179X: D=%u CMD[%02X] READ SECTOR (c=%u h=%u s=%u)\n",
-		fdc->drv->d, fdc->cmd, fdc->track, h, fdc->sector
+	fprintf (stderr, "WD179X: D=%u CMD[%02X] READ SECTOR (pc=%u c=%u h=%u s=%u)\n",
+		fdc->drv->d, fdc->cmd, fdc->drv->c, fdc->track, h, fdc->sector
 	);
 #endif
 
@@ -1176,7 +1301,7 @@ void cmd_write_sector_clock (wd179x_t *fdc)
 			else if (fdc->write_idx < (16 * 38)) {
 				fdc->write_val[0] = (fdc->cmd & 1) ? 0xf8 : 0xfb;
 			}
-			else if (fdc->write_idx < (fdc->write_cnt - 32)) {
+			else if (fdc->write_idx < (fdc->write_cnt - 48)) {
 				fdc->interrupt_enable = 0;
 
 				if (fdc->status & WD179X_ST_DRQ) {
@@ -1187,16 +1312,19 @@ void cmd_write_sector_clock (wd179x_t *fdc)
 
 				fdc->write_val[0] = fdc->data;
 
-				if ((fdc->write_idx + 16) < (fdc->write_cnt - 32)) {
+				if ((fdc->write_idx + 16) < (fdc->write_cnt - 48)) {
 					wd179x_set_drq (fdc, 1);
 				}
 			}
-			else if (fdc->write_idx < (fdc->write_cnt - 16)) {
+			else if (fdc->write_idx < (fdc->write_cnt - 32)) {
 				fdc->write_crc = fdc->crc;
 				fdc->write_val[0] = (fdc->write_crc >> 8) & 0xff;
 			}
-			else if (fdc->write_idx < fdc->write_cnt) {
+			else if (fdc->write_idx < (fdc->write_cnt - 16)) {
 				fdc->write_val[0] = fdc->write_crc & 0xff;
+			}
+			else if (fdc->write_idx < fdc->write_cnt) {
+				fdc->write_val[0] = 0x4e;
 			}
 			else {
 #if DEBUG_WD179X >= 2
@@ -1289,15 +1417,10 @@ void cmd_write_sector_idam (wd179x_t *fdc)
 		return;
 	}
 
-	if (fdc->scan_val[3] > 3) {
-		wd179x_scan_mark_start (fdc);
-		return;
-	}
-
 	wd179x_set_drq (fdc, 1);
 
 	fdc->write_idx = 0;
-	fdc->write_cnt = 16 * (22 + 12 + 4 + (128U << fdc->scan_val[3]) + 2);
+	fdc->write_cnt = 16 * (22 + 12 + 4 + (128U << (fdc->scan_val[3] & 3)) + 2 + 1);
 
 	fdc->clock = cmd_write_sector_clock;
 
@@ -1318,6 +1441,12 @@ void cmd_write_sector (wd179x_t *fdc)
 #endif
 
 	fdc->status = WD179X_ST_BUSY;
+
+	if (fdc->drv->wprot) {
+		fdc->status |= WD179X_ST_WPROT;
+		cmd_done (fdc, 1);
+		return;
+	}
 
 	if (fdc->auto_motor) {
 		wd179x_set_motor (fdc, fdc->sel_drv, 1);
@@ -1424,6 +1553,12 @@ void cmd_write_track (wd179x_t *fdc)
 #endif
 
 	fdc->status = WD179X_ST_BUSY;
+
+	if (fdc->drv->wprot) {
+		fdc->status |= WD179X_ST_WPROT;
+		cmd_done (fdc, 1);
+		return;
+	}
 
 	if (fdc->auto_motor) {
 		wd179x_set_motor (fdc, fdc->sel_drv, 1);
@@ -1614,7 +1749,13 @@ void wd179x_read_track_clock (wd179x_t *fdc)
 		else if (fdc->scan_buf == WD179X_MARK_C2) {
 			fdc->is_data_bit = 1;
 			fdc->last_mark_c2 = 16;
-			fdc->scan_cnt = 16;
+
+			if (fdc->scan_cnt < 4) {
+				fdc->scan_cnt = 0;
+			}
+			else {
+				fdc->scan_cnt = 16;
+			}
 		}
 
 		if (fdc->scan_cnt < 16) {
@@ -1626,6 +1767,7 @@ void wd179x_read_track_clock (wd179x_t *fdc)
 		if (fdc->status & WD179X_ST_DRQ) {
 			fprintf (stderr, "WD179X: READ TRACK LOST DATA\n");
 			fdc->status |= WD179X_ST_LOST_DATA;
+			wd179x_set_drq (fdc, 0);
 		}
 
 		fdc->data = fdc->val & 0xff;
@@ -1692,7 +1834,7 @@ void cmd_force_interrupt (wd179x_t *fdc, unsigned char cmd)
 	);
 #endif
 
-	wd179x_set_irq (fdc, 0);
+	/* wd179x_set_irq (fdc, 0); */
 
 	fdc->status = WD179X_ST_BUSY;
 
@@ -1713,9 +1855,6 @@ void wd179x_set_cmd (wd179x_t *fdc, unsigned char val)
 		return;
 	}
 
-	fdc->clock = NULL;
-	fdc->cont = NULL;
-
 	if (fdc->status & WD179X_ST_BUSY) {
 		fprintf (stderr, "WD179X: CMD[%02X] SKIP COMMAND (%02X/%02X)\n",
 			val, fdc->cmd, fdc->status
@@ -1724,9 +1863,13 @@ void wd179x_set_cmd (wd179x_t *fdc, unsigned char val)
 		return;
 	}
 
+	fdc->clock = NULL;
+	fdc->cont = NULL;
+
 	fdc->cmd = val;
 
 	wd179x_set_irq (fdc, 0);
+	wd179x_set_drq (fdc, 0);
 
 	fdc->interrupt_enable = 1;
 	fdc->interrupt_request = 0;
@@ -1737,8 +1880,14 @@ void wd179x_set_cmd (wd179x_t *fdc, unsigned char val)
 	else if ((val & 0xf0) == 0x10) {
 		cmd_seek (fdc);
 	}
+	else if ((val & 0xe0) == 0x20) {
+		cmd_step (fdc, 0);
+	}
 	else if ((val & 0xe0) == 0x40) {
 		cmd_step (fdc, 1);
+	}
+	else if ((val & 0xe0) == 0x60) {
+		cmd_step (fdc, 2);
 	}
 	else if ((val & 0xe1) == 0x80) {
 		cmd_read_sector (fdc);
@@ -1749,10 +1898,10 @@ void wd179x_set_cmd (wd179x_t *fdc, unsigned char val)
 	else if ((val & 0xe0) == 0xc0) {
 		cmd_read_address (fdc);
 	}
-	else if ((val & 0xf8) == 0xe0) {
+	else if ((val & 0xf0) == 0xe0) {
 		cmd_read_track (fdc);
 	}
-	else if ((val & 0xf9) == 0xf0) {
+	else if ((val & 0xf1) == 0xf0) {
 		cmd_write_track (fdc);
 	}
 	else {
@@ -1765,12 +1914,12 @@ void wd179x_clock2 (wd179x_t *fdc, unsigned cnt)
 	fdc->check = 0;
 
 	if (fdc->drive[0].motor) {
-		fdc->drive[0].motor_clock += cnt * (fdc->bit_clock / 2);
+		fdc->drive[0].motor_clock += cnt * (fdc->drive[0].bit_clock / 2);
 		fdc->check = 1;
 	}
 
 	if (fdc->drive[1].motor) {
-		fdc->drive[1].motor_clock += cnt * (fdc->bit_clock / 2);
+		fdc->drive[1].motor_clock += cnt * (fdc->drive[1].bit_clock / 2);
 		fdc->check = 1;
 	}
 

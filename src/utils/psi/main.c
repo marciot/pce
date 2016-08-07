@@ -5,7 +5,7 @@
 /*****************************************************************************
  * File name:   src/utils/psi/main.c                                         *
  * Created:     2010-08-13 by Hampa Hug <hampa@hampa.ch>                     *
- * Copyright:   (C) 2010-2013 Hampa Hug <hampa@hampa.ch>                     *
+ * Copyright:   (C) 2010-2015 Hampa Hug <hampa@hampa.ch>                     *
  *****************************************************************************/
 
 /*****************************************************************************
@@ -40,6 +40,7 @@
 
 #include <drivers/psi/psi.h>
 #include <drivers/psi/psi-img-raw.h>
+#include <drivers/psi/psi-img-stx.h>
 #include <drivers/psi/psi-img.h>
 
 
@@ -51,23 +52,18 @@ unsigned long par_cnt;
 char          par_invert = 0;
 
 char          par_cyl_all = 1;
-char          par_cyl_inv = 0;
 unsigned      par_cyl[2];
 
 char          par_trk_all = 1;
-char          par_trk_inv = 0;
 unsigned      par_trk[2];
 
 char          par_sct_all = 1;
-char          par_sct_inv = 0;
 unsigned      par_sct[2];
 
 char          par_rsc_all = 1;
-char          par_rsc_inv = 0;
 unsigned      par_rsc[2];
 
 char          par_alt_all = 1;
-char          par_alt_inv = 0;
 unsigned      par_alt[2];
 
 
@@ -83,6 +79,7 @@ static pce_option_t opts[] = {
 	{ '?', 0, "help", NULL, "Print usage information" },
 	{ 'a', 1, "alternate", "a", "Select alternate sectors" },
 	{ 'c', 1, "cylinder", "c", "Select cylinders [all]" },
+	{ 'D', 0, "dump", NULL, "Dump extra information [no]" },
 	{ 'e', 2, "edit", "what val", "Edit selected sector attributes" },
 	{ 'f', 0, "info", NULL, "Print image information [no]" },
 	{ 'F', 1, "filler", "val", "Set the sector fill byte [0xf6]" },
@@ -103,6 +100,7 @@ static pce_option_t opts[] = {
 	{ 'v', 0, "verbose", NULL, "Verbose operation [no]" },
 	{ 'V', 0, "version", NULL, "Print version information" },
 	{ 'x', 0, "invert", NULL, "Invert the selection [no]" },
+	{ 'z', 0, "clear", NULL, "Clear the selection [yes]" },
 	{  -1, 0, NULL, NULL, NULL }
 };
 
@@ -170,17 +168,11 @@ void print_version (void)
 
 
 static
-int psi_parse_range (const char *str, unsigned *v1, unsigned *v2, char *all, char *inv)
+int psi_parse_range (const char *str, unsigned *v1, unsigned *v2, char *all)
 {
 	*v1 = 0;
 	*v2 = 0;
 	*all = 0;
-	*inv = 0;
-
-	if (*str == '-') {
-		*inv = 1;
-		str += 1;
-	}
 
 	if (strcmp (str, "all") == 0) {
 		*all = 1;
@@ -244,27 +236,13 @@ int psi_parse_int_list (const char **str, unsigned *val)
 }
 
 static
-int psi_sel_compare (unsigned v, unsigned v1, unsigned v2, char all, char inv)
-{
-	int r;
-
-	r = (all || ((v >= v1) && (v <= v2)));
-
-	if (inv) {
-		r = !r;
-	}
-
-	return (r);
-}
-
-static
 int psi_sel_match_track (unsigned c, unsigned h)
 {
-	if (psi_sel_compare (c, par_cyl[0], par_cyl[1], par_cyl_all, par_cyl_inv) == 0) {
+	if (!par_cyl_all && ((c < par_cyl[0]) || (c > par_cyl[1]))) {
 		return (par_invert);
 	}
 
-	if (psi_sel_compare (h, par_trk[0], par_trk[1], par_trk_all, par_trk_inv) == 0) {
+	if (!par_trk_all && ((h < par_trk[0]) || (h > par_trk[1]))) {
 		return (par_invert);
 	}
 
@@ -277,15 +255,15 @@ int psi_sel_match (unsigned c, unsigned h, unsigned s, unsigned r, unsigned a)
 		return (par_invert);
 	}
 
-	if (psi_sel_compare (s, par_sct[0], par_sct[1], par_sct_all, par_sct_inv) == 0) {
+	if (!par_sct_all && ((s < par_sct[0]) || (s > par_sct[1]))) {
 		return (par_invert);
 	}
 
-	if (psi_sel_compare (r, par_rsc[0], par_rsc[1], par_rsc_all, par_rsc_inv) == 0) {
+	if (!par_rsc_all && ((r < par_rsc[0]) || (r > par_rsc[1]))) {
 		return (par_invert);
 	}
 
-	if (psi_sel_compare (a, par_alt[0], par_alt[1], par_alt_all, par_alt_inv) == 0) {
+	if (!par_alt_all && ((a < par_alt[0]) || (a > par_alt[1]))) {
 		return (par_invert);
 	}
 
@@ -494,11 +472,20 @@ int psi_set_format (const char *name, unsigned *val)
 	if (strcmp (name, "ana") == 0) {
 		*val = PSI_FORMAT_ANADISK;
 	}
+	else if (strcmp (name, "cp2") == 0) {
+		*val = PSI_FORMAT_CP2;
+	}
 	else if (strcmp (name, "dc42") == 0) {
 		*val = PSI_FORMAT_DC42;
 	}
 	else if (strcmp (name, "imd") == 0) {
 		*val = PSI_FORMAT_IMD;
+	}
+	else if (strcmp (name, "mac") == 0) {
+		*val = PSI_FORMAT_MAC;
+	}
+	else if (strcmp (name, "msa") == 0) {
+		*val = PSI_FORMAT_MSA;
 	}
 	else if (strcmp (name, "pfdc") == 0) {
 		*val = PSI_FORMAT_PFDC;
@@ -575,15 +562,19 @@ int main (int argc, char **argv)
 			return (0);
 
 		case 'a':
-			if (psi_parse_range (optarg[0], &par_alt[0], &par_alt[1], &par_alt_all, &par_alt_inv)) {
+			if (psi_parse_range (optarg[0], &par_alt[0], &par_alt[1], &par_alt_all)) {
 				return (1);
 			}
 			break;
 
 		case 'c':
-			if (psi_parse_range (optarg[0], &par_cyl[0], &par_cyl[1], &par_cyl_all, &par_cyl_inv)) {
+			if (psi_parse_range (optarg[0], &par_cyl[0], &par_cyl[1], &par_cyl_all)) {
 				return (1);
 			}
+			break;
+
+		case 'D':
+			par_stx_dump_tracks = 1;
 			break;
 
 		case 'e':
@@ -608,7 +599,7 @@ int main (int argc, char **argv)
 			break;
 
 		case 'h':
-			if (psi_parse_range (optarg[0], &par_trk[0], &par_trk[1], &par_trk_all, &par_trk_inv)) {
+			if (psi_parse_range (optarg[0], &par_trk[0], &par_trk[1], &par_trk_all)) {
 				return (1);
 			}
 			break;
@@ -705,27 +696,27 @@ int main (int argc, char **argv)
 			break;
 
 		case 'r':
-			if (psi_parse_range (optarg[0], &par_cyl[0], &par_cyl[1], &par_cyl_all, &par_cyl_inv)) {
+			if (psi_parse_range (optarg[0], &par_cyl[0], &par_cyl[1], &par_cyl_all)) {
 				return (1);
 			}
 
-			if (psi_parse_range (optarg[1], &par_trk[0], &par_trk[1], &par_trk_all, &par_trk_inv)) {
+			if (psi_parse_range (optarg[1], &par_trk[0], &par_trk[1], &par_trk_all)) {
 				return (1);
 			}
 
-			if (psi_parse_range (optarg[2], &par_sct[0], &par_sct[1], &par_sct_all, &par_sct_inv)) {
+			if (psi_parse_range (optarg[2], &par_sct[0], &par_sct[1], &par_sct_all)) {
 				return (1);
 			}
 			break;
 
 		case 's':
-			if (psi_parse_range (optarg[0], &par_sct[0], &par_sct[1], &par_sct_all, &par_sct_inv)) {
+			if (psi_parse_range (optarg[0], &par_sct[0], &par_sct[1], &par_sct_all)) {
 				return (1);
 			}
 			break;
 
 		case 'S':
-			if (psi_parse_range (optarg[0], &par_rsc[0], &par_rsc[1], &par_rsc_all, &par_rsc_inv)) {
+			if (psi_parse_range (optarg[0], &par_rsc[0], &par_rsc[1], &par_rsc_all)) {
 				return (1);
 			}
 			break;
@@ -736,6 +727,15 @@ int main (int argc, char **argv)
 
 		case 'x':
 			par_invert = !par_invert;
+			break;
+
+		case 'z':
+			par_invert = 0;
+			par_cyl_all = 1;
+			par_trk_all = 1;
+			par_sct_all = 1;
+			par_rsc_all = 1;
+			par_alt_all = 1;
 			break;
 
 		case 0:

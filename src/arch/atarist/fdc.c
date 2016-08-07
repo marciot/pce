@@ -5,7 +5,7 @@
 /*****************************************************************************
  * File name:   src/arch/atarist/fdc.c                                       *
  * Created:     2013-06-02 by Hampa Hug <hampa@hampa.ch>                     *
- * Copyright:   (C) 2013 Hampa Hug <hampa@hampa.ch>                          *
+ * Copyright:   (C) 2013-2014 Hampa Hug <hampa@hampa.ch>                     *
  *****************************************************************************/
 
 /*****************************************************************************
@@ -36,7 +36,7 @@
 
 #include <drivers/pri/pri.h>
 #include <drivers/pri/pri-img.h>
-#include <drivers/pri/mfm-ibm.h>
+#include <drivers/pri/pri-enc-mfm.h>
 
 #include <lib/log.h>
 #include <lib/string.h>
@@ -48,73 +48,36 @@
 
 
 static
-int st_read_track (void *ext, wd179x_drive_t *drv)
+int st_read_track (void *ext, unsigned d, unsigned c, unsigned h, pri_trk_t **trk)
 {
-	unsigned long cnt;
-	st_fdc_t      *fdc;
-	pri_img_t     *img;
-	pri_trk_t     *trk;
+	st_fdc_t  *fdc;
+	pri_img_t *img;
 
 	fdc = ext;
 
-	if ((img = fdc->img[drv->d & 1]) == NULL) {
+	if ((img = fdc->img[d & 1]) == NULL) {
 		return (1);
 	}
 
-	if ((trk = pri_img_get_track (img, drv->c, drv->h, 1)) == NULL) {
+	if ((*trk = pri_img_get_track (img, c, h, 1)) == NULL) {
 		return (1);
 	}
-
-	if (pri_trk_get_size (trk) == 0) {
-		if (pri_trk_set_size (trk, 500000 / 5)) {
-			return (1);
-		}
-	}
-
-	if (pri_trk_get_clock (trk) == 0) {
-		pri_trk_set_clock (trk, 500000);
-	}
-
-	cnt = (trk->size + 7) / 8;
-
-	if (cnt > WD179X_TRKBUF_SIZE) {
-		return (1);
-	}
-
-	memcpy (drv->trkbuf, trk->data, cnt);
-
-	drv->trkbuf_cnt = trk->size;
 
 	return (0);
 }
 
 static
-int st_write_track (void *ext, wd179x_drive_t *drv)
+int st_write_track (void *ext, unsigned d, unsigned c, unsigned h, pri_trk_t *trk)
 {
-	unsigned long cnt;
-	st_fdc_t      *fdc;
-	pri_img_t     *img;
-	pri_trk_t     *trk;
+	st_fdc_t *fdc;
 
 	fdc = ext;
 
-	if ((img = fdc->img[drv->d & 1]) == NULL) {
+	if (fdc->img[d & 1] == NULL) {
 		return (1);
 	}
 
-	fdc->modified[drv->d & 1] = 1;
-
-	if ((trk = pri_img_get_track (img, drv->c, drv->h, 1)) == NULL) {
-		return (1);
-	}
-
-	if (pri_trk_set_size (trk, drv->trkbuf_cnt)) {
-		return (1);
-	}
-
-	cnt = (trk->size + 7) / 8;
-
-	memcpy (trk->data, drv->trkbuf, cnt);
+	fdc->modified[d & 1] = 1;
 
 	return (0);
 }
@@ -135,6 +98,7 @@ void st_fdc_init (st_fdc_t *fdc)
 		fdc->use_fname[i] = 0;
 		fdc->fname[i] = NULL;
 		fdc->diskid[i] = 0xffff;
+		fdc->wprot[i] = 0;
 		fdc->media_change[i] = 0;
 		fdc->img[i] = NULL;
 		fdc->modified[i] = 0;
@@ -145,15 +109,13 @@ void st_fdc_free (st_fdc_t *fdc)
 {
 	unsigned i;
 
-	wd179x_free (&fdc->wd179x);
-
 	for (i = 0; i < 2; i++) {
 		st_fdc_save (fdc, i);
-
 		pri_img_del (fdc->img[i]);
-
 		free (fdc->fname[i]);
 	}
+
+	wd179x_free (&fdc->wd179x);
 }
 
 void st_fdc_reset (st_fdc_t *fdc)
@@ -180,6 +142,17 @@ void st_fdc_set_disks (st_fdc_t *fdc, disks_t *dsks)
 void st_fdc_set_disk_id (st_fdc_t *fdc, unsigned drive, unsigned diskid)
 {
 	fdc->diskid[drive] = diskid;
+}
+
+void st_fdc_set_wprot (st_fdc_t *fdc, unsigned drive, int wprot)
+{
+	if (drive < 2) {
+		fdc->wprot[drive] = (wprot != 0);
+
+		if (fdc->media_change[drive] == 0) {
+			wd179x_set_wprot (&fdc->wd179x, drive, fdc->wprot[drive]);
+		}
+	}
 }
 
 void st_fdc_set_fname (st_fdc_t *fdc, unsigned drive, const char *fname)
@@ -334,11 +307,11 @@ psi_img_t *st_fdc_load_block (st_fdc_t *fdc, unsigned drive, disk_t *dsk)
 static
 pri_img_t *st_fdc_load_disk (st_fdc_t *fdc, unsigned drive)
 {
-	disk_t     *dsk;
-	disk_psi_t *dskpsi;
-	psi_img_t  *img, *del;
-	pri_img_t  *ret;
-	pri_mfm_t  par;
+	disk_t        *dsk;
+	disk_psi_t    *dskpsi;
+	psi_img_t     *img, *del;
+	pri_img_t     *ret;
+	pri_enc_mfm_t par;
 
 	dsk = dsks_get_disk (fdc->dsks, fdc->diskid[drive]);
 
@@ -360,7 +333,7 @@ pri_img_t *st_fdc_load_disk (st_fdc_t *fdc, unsigned drive)
 		return (NULL);
 	}
 
-	pri_mfm_init (&par, 500000, 300);
+	pri_encode_mfm_init (&par, 500000, 300);
 
 	par.enable_iam = 0;
 	par.auto_gap3 = 1;
@@ -489,7 +462,7 @@ int st_fdc_save_disk (st_fdc_t *fdc, unsigned drive)
 		return (1);
 	}
 
-	img = pri_decode_mfm (fdc->img[drive]);
+	img = pri_decode_mfm (fdc->img[drive], NULL);
 
 	if (img == NULL) {
 		return (1);
@@ -582,12 +555,12 @@ void st_fdc_clock_media_change (st_fdc_t *fdc, unsigned cnt)
 	fdc->media_change_clk = 0;
 
 	if (fdc->media_change[0]) {
-		wd179x_set_wprot (&fdc->wd179x, 0, 0);
+		wd179x_set_wprot (&fdc->wd179x, 0, fdc->wprot[0]);
 		fdc->media_change[0] = 0;
 	}
 
 	if (fdc->media_change[1]) {
-		wd179x_set_wprot (&fdc->wd179x, 1, 0);
+		wd179x_set_wprot (&fdc->wd179x, 1, fdc->wprot[1]);
 		fdc->media_change[1] = 0;
 	}
 }

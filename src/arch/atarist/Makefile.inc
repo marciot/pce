@@ -48,11 +48,13 @@ PCE_ATARIST_BAS := \
 	psg \
 	rp5c15 \
 	smf \
-	video
+	video \
+	viking
 
 PCE_ATARIST_SRC  := $(foreach f,$(PCE_ATARIST_BAS),$(rel)/$(f).c)
 PCE_ATARIST_OBJ  := $(foreach f,$(PCE_ATARIST_BAS),$(rel)/$(f).o)
 PCE_ATARIST_HDR  := $(foreach f,$(PCE_ATARIST_BAS),$(rel)/$(f).h)
+PCE_ATARIST_HDR  += $(rel)/psg_vol.h
 PCE_ATARIST_MAN1 := $(rel)/pce-atarist.1
 PCE_ATARIST_ETC  := $(rel)/pce-atarist.cfg
 PCE_ATARIST_BIN  := $(rel)/pce-atarist$(EXEEXT)
@@ -70,6 +72,7 @@ PCE_ATARIST_OBJ_EXT := \
 	src/drivers/char/char.a \
 	src/drivers/pri/pri.a \
 	src/drivers/psi/psi.a \
+	src/drivers/sound/sound.a \
 	src/drivers/options.o \
 	src/lib/brkpt.o \
 	src/lib/cmd.o \
@@ -119,6 +122,7 @@ $(rel)/psg.o:     $(rel)/psg.c
 $(rel)/rp5c15.o:  $(rel)/rp5c15.c
 $(rel)/smf.o:     $(rel)/smf.c
 $(rel)/video.o:   $(rel)/video.c
+$(rel)/viking.o:  $(rel)/viking.c
 
 $(rel)/pce-atarist$(EXEEXT): $(PCE_ATARIST_OBJ_EXT) $(PCE_ATARIST_OBJ)
 	$(QP)echo "  LD     $@"

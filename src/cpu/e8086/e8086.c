@@ -5,7 +5,7 @@
 /*****************************************************************************
  * File name:   src/cpu/e8086/e8086.c                                        *
  * Created:     1996-04-28 by Hampa Hug <hampa@hampa.ch>                     *
- * Copyright:   (C) 1996-2013 Hampa Hug <hampa@hampa.ch>                     *
+ * Copyright:   (C) 1996-2014 Hampa Hug <hampa@hampa.ch>                     *
  *****************************************************************************/
 
 /*****************************************************************************
@@ -78,6 +78,11 @@ void e86_init (e8086_t *c)
 	c->irq = 0;
 
 	c->halt = 0;
+
+	c->int_cnt = 0;
+	c->int_vec = 0;
+	c->int_cs = 0;
+	c->int_ip = 0;
 
 	for (i = 0; i < 256; i++) {
 		c->op[i] = e86_opcodes[i];
@@ -343,6 +348,11 @@ void e86_trap (e8086_t *c, unsigned n)
 		ip = e86_get_ip (c);
 	}
 
+	c->int_cnt += 1;
+	c->int_vec = n;
+	c->int_cs = e86_get_cs (c);
+	c->int_ip = ip;
+
 	e86_push (c, e86_get_flags (c));
 	e86_push (c, e86_get_cs (c));
 	e86_push (c, ip);
@@ -445,9 +455,8 @@ void e86_reset (e8086_t *c)
 
 void e86_execute (e8086_t *c)
 {
-	unsigned       cnt;
-	unsigned short flg;
-	char           irq;
+	unsigned cnt;
+	char     irq;
 
 	if (c->halt) {
 		e86_set_clk (c, 2);
@@ -464,7 +473,6 @@ void e86_execute (e8086_t *c)
 		c->cur_ip = c->ip;
 	}
 
-	flg = c->flg;
 	irq = c->irq;
 
 	c->enable_int = 1;
@@ -492,7 +500,8 @@ void e86_execute (e8086_t *c)
 	c->instructions += 1;
 
 	if (c->enable_int) {
-		if (flg & c->flg & E86_FLG_T) {
+		if (c->flg & E86_FLG_T) {
+			c->halt = 0;
 			e86_trap (c, 1);
 		}
 		else if (irq && c->irq && e86_get_if (c)) {

@@ -5,7 +5,7 @@
 /*****************************************************************************
  * File name:   src/arch/atarist/ikbd.c                                      *
  * Created:     2013-06-01 by Hampa Hug <hampa@hampa.ch>                     *
- * Copyright:   (C) 2013 Hampa Hug <hampa@hampa.ch>                          *
+ * Copyright:   (C) 2013-2015 Hampa Hug <hampa@hampa.ch>                     *
  *****************************************************************************/
 
 /*****************************************************************************
@@ -161,6 +161,7 @@ static st_joymap_t joymap[] = {
 	{ PCE_KEY_KP_8, 0x01 },
 	{ PCE_KEY_KP_9, 0x09 },
 	{ PCE_KEY_KP_4, 0x04 },
+	{ PCE_KEY_KP_5, 0x80 },
 	{ PCE_KEY_KP_6, 0x08 },
 	{ PCE_KEY_KP_1, 0x06 },
 	{ PCE_KEY_KP_2, 0x02 },
@@ -172,13 +173,12 @@ static st_joymap_t joymap[] = {
 
 void st_kbd_init (st_kbd_t *kbd)
 {
-	kbd->idle = 1;
-
 	kbd->cmd_cnt = 0;
 
 	kbd->paused = 0;
 	kbd->disabled = 0;
 	kbd->joy_report = 1;
+	kbd->joy_mode = 0;
 
 	kbd->mouse_dx = 0;
 	kbd->mouse_dy = 0;
@@ -191,6 +191,32 @@ void st_kbd_init (st_kbd_t *kbd)
 
 	kbd->buf_hd = 0;
 	kbd->buf_tl = 0;
+
+	kbd->magic_ext = NULL;
+	kbd->magic = NULL;
+}
+
+void st_kbd_set_magic (st_kbd_t *kbd, void *ext, void *fct)
+{
+	kbd->magic_ext = ext;
+	kbd->magic = fct;
+}
+
+/*
+ * Get the number of free bytes in the keyboard buffer
+ */
+static
+unsigned st_kbd_buf_free (const st_kbd_t *kbd)
+{
+	unsigned cnt;
+
+	cnt = kbd->buf_hd - kbd->buf_tl;
+
+	if (kbd->buf_hd < kbd->buf_tl) {
+		cnt += sizeof (kbd->buf);
+	}
+
+	return (sizeof (kbd->buf) - cnt - 1);
 }
 
 int st_kbd_buf_put (st_kbd_t *kbd, unsigned char val)
@@ -261,6 +287,10 @@ void st_kbd_check_mouse (st_kbd_t *kbd)
 	}
 
 	if ((kbd->mouse_dx == 0) && (kbd->mouse_dy == 0) && (kbd->mouse_but[0] == kbd->mouse_but[1])) {
+		return;
+	}
+
+	if (st_kbd_buf_free (kbd) < 3) {
 		return;
 	}
 
@@ -379,8 +409,19 @@ int st_kbd_set_joy (st_kbd_t *kbd, unsigned idx, unsigned event, pce_key_t key)
 		return (1);
 	}
 
-	if (kbd->joy_report == 0) {
-		return (0);
+	if (kbd->joy_mode == 0) {
+		if (key == PCE_KEY_KP_0) {
+			val = 1 << idx;
+
+			if (event == PCE_KEY_EVENT_DOWN) {
+				kbd->mouse_but[1] |= val;
+			}
+			else {
+				kbd->mouse_but[1] &= ~val;
+			}
+
+			st_kbd_check_mouse (kbd);
+		}
 	}
 
 	val = kbd->joy[idx];
@@ -397,6 +438,10 @@ int st_kbd_set_joy (st_kbd_t *kbd, unsigned idx, unsigned event, pce_key_t key)
 	}
 
 	kbd->joy[idx] = val;
+
+	if (kbd->joy_report == 0) {
+		return (0);
+	}
 
 	st_kbd_buf_put (kbd, 0xfe | (idx & 1));
 	st_kbd_buf_put (kbd, val);
@@ -427,11 +472,21 @@ void st_kbd_set_key (st_kbd_t *kbd, unsigned event, pce_key_t key)
 		if (key == PCE_KEY_KP_5) {
 			if (++kbd->keypad_joy > 2) {
 				kbd->keypad_joy = 0;
+				st_log_deb ("keypad: keyboard\n");
 			}
-
-			st_log_deb ("keypad joystick %u\n", kbd->keypad_joy);
+			else {
+				st_log_deb ("keypad: joystick %u\n",
+					(kbd->keypad_joy & 1) + 1
+				);
+			}
 		}
 		else {
+			if (kbd->magic != NULL) {
+				if (kbd->magic (kbd->magic_ext, key) == 0) {
+					return;
+				}
+			}
+
 			pce_log (MSG_INF, "unhandled magic key (%u)\n",
 				(unsigned) key
 			);
@@ -440,8 +495,8 @@ void st_kbd_set_key (st_kbd_t *kbd, unsigned event, pce_key_t key)
 		return;
 	}
 
-	if (kbd->keypad_joy < 2) {
-		if (st_kbd_set_joy (kbd, kbd->keypad_joy, event, key) == 0) {
+	if (kbd->keypad_joy > 0) {
+		if (st_kbd_set_joy (kbd, kbd->keypad_joy & 1, event, key) == 0) {
 			return;
 		}
 	}
@@ -513,6 +568,7 @@ void st_kbd_cmd_08 (st_kbd_t *kbd)
 
 	kbd->abs_pos = 0;
 	kbd->disabled = 0;
+	kbd->joy_mode = 0;
 
 	kbd->cmd_cnt = 0;
 }
@@ -538,6 +594,7 @@ void st_kbd_cmd_09 (st_kbd_t *kbd)
 
 	kbd->abs_pos = 1;
 	kbd->disabled = 0;
+	kbd->joy_mode = 0;
 
 	kbd->cur_x = 0;
 	kbd->cur_y = 0;
@@ -560,6 +617,8 @@ void st_kbd_cmd_0b (st_kbd_t *kbd)
 	st_log_deb ("IKBD: SET MOUSE THRESHOLD: %u / %u\n", kbd->cmd[1], kbd->cmd[2]);
 #endif
 
+	kbd->joy_mode = 0;
+
 	kbd->cmd_cnt = 0;
 }
 
@@ -581,6 +640,8 @@ void st_kbd_cmd_0c (st_kbd_t *kbd)
 		kbd->scale_x, kbd->scale_y
 	);
 #endif
+
+	kbd->joy_mode = 0;
 
 	kbd->cmd_cnt = 0;
 }
@@ -652,6 +713,7 @@ void st_kbd_cmd_0f (st_kbd_t *kbd)
 #endif
 
 	kbd->y0_at_top = 0;
+	kbd->joy_mode = 0;
 	kbd->cmd_cnt = 0;
 }
 
@@ -666,6 +728,7 @@ void st_kbd_cmd_10 (st_kbd_t *kbd)
 #endif
 
 	kbd->y0_at_top = 1;
+	kbd->joy_mode = 0;
 	kbd->cmd_cnt = 0;
 }
 
@@ -714,6 +777,36 @@ void st_kbd_cmd_13 (st_kbd_t *kbd)
 }
 
 /*
+ * 14: SET JOYSTICK EVENT REPORTING
+ */
+static
+void st_kbd_cmd_14 (st_kbd_t *kbd)
+{
+#if DEBUG_KBD >= 1
+	st_log_deb ("IKBD: SET JOYSTICK EVENT REPORTING\n");
+#endif
+
+	kbd->joy_report = 1;
+	kbd->joy_mode = 1;
+	kbd->cmd_cnt = 0;
+}
+
+/*
+ * 15: SET JOYSTICK INTERROGATION MODE
+ */
+static
+void st_kbd_cmd_15 (st_kbd_t *kbd)
+{
+#if DEBUG_KBD >= 1
+	st_log_deb ("IKBD: SET JOYSTICK INTERROGATION MODE\n");
+#endif
+
+	kbd->joy_report = 0;
+	kbd->joy_mode = 1;
+	kbd->cmd_cnt = 0;
+}
+
+/*
  * 16: JOYSTICK INTERROGATE
  */
 static
@@ -726,6 +819,8 @@ void st_kbd_cmd_16 (st_kbd_t *kbd)
 	st_kbd_buf_put (kbd, 0xfd);
 	st_kbd_buf_put (kbd, kbd->joy[0]);
 	st_kbd_buf_put (kbd, kbd->joy[1]);
+
+	kbd->cmd_cnt = 0;
 }
 
 /*
@@ -738,6 +833,7 @@ void st_kbd_cmd_1a (st_kbd_t *kbd)
 	st_log_deb ("IKBD: DISABLE JOYSTICKS\n");
 #endif
 
+	kbd->joy_mode = 0;
 	kbd->cmd_cnt = 0;
 }
 
@@ -887,6 +983,14 @@ void st_kbd_set_uint8 (st_kbd_t *kbd, unsigned char val)
 		st_kbd_cmd_13 (kbd);
 		break;
 
+	case 0x14:
+		st_kbd_cmd_14 (kbd);
+		break;
+
+	case 0x15:
+		st_kbd_cmd_15 (kbd);
+		break;
+
 	case 0x16:
 		st_kbd_cmd_16 (kbd);
 		break;
@@ -923,7 +1027,6 @@ void st_kbd_set_uint8 (st_kbd_t *kbd, unsigned char val)
 int st_kbd_get_uint8 (st_kbd_t *kbd, unsigned char *val)
 {
 	if (kbd->paused) {
-		kbd->idle = 1;
 		return (1);
 	}
 
@@ -931,8 +1034,6 @@ int st_kbd_get_uint8 (st_kbd_t *kbd, unsigned char *val)
 		st_kbd_check_mouse (kbd);
 
 		if (st_kbd_buf_get (kbd, val)) {
-			kbd->idle = 1;
-
 			return (1);
 		}
 	}
@@ -941,15 +1042,11 @@ int st_kbd_get_uint8 (st_kbd_t *kbd, unsigned char *val)
 	st_log_deb ("IKBD: send %02X\n", *val);
 #endif
 
-	kbd->idle = 0;
-
 	return (0);
 }
 
 void st_kbd_reset (st_kbd_t *kbd)
 {
-	kbd->idle = 1;
-
 	kbd->cmd_cnt = 0;
 
 	kbd->paused = 0;

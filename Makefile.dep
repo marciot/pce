@@ -9,6 +9,7 @@ src/arch/atarist/acsi.o: src/arch/atarist/acsi.c \
 	src/config.h \
 	src/devices/memory.h \
 	src/drivers/block/block.h \
+	src/drivers/pri/pri.h \
 	src/lib/log.h
 
 src/arch/atarist/atarist.o: src/arch/atarist/atarist.c \
@@ -24,6 +25,7 @@ src/arch/atarist/atarist.o: src/arch/atarist/atarist.c \
 	src/arch/atarist/rp5c15.h \
 	src/arch/atarist/smf.h \
 	src/arch/atarist/video.h \
+	src/arch/atarist/viking.h \
 	src/chipset/e6850.h \
 	src/chipset/e68901.h \
 	src/chipset/e8530.h \
@@ -34,6 +36,8 @@ src/arch/atarist/atarist.o: src/arch/atarist/atarist.c \
 	src/drivers/block/block.h \
 	src/drivers/char/char.h \
 	src/drivers/pri/pri.h \
+	src/drivers/sound/filter.h \
+	src/drivers/sound/sound.h \
 	src/drivers/video/keys.h \
 	src/drivers/video/terminal.h \
 	src/lib/brkpt.h \
@@ -58,6 +62,7 @@ src/arch/atarist/cmd.o: src/arch/atarist/cmd.c \
 	src/arch/atarist/rp5c15.h \
 	src/arch/atarist/smf.h \
 	src/arch/atarist/video.h \
+	src/arch/atarist/viking.h \
 	src/chipset/e6850.h \
 	src/chipset/e68901.h \
 	src/chipset/e8530.h \
@@ -68,6 +73,8 @@ src/arch/atarist/cmd.o: src/arch/atarist/cmd.c \
 	src/drivers/block/block.h \
 	src/drivers/char/char.h \
 	src/drivers/pri/pri.h \
+	src/drivers/sound/filter.h \
+	src/drivers/sound/sound.h \
 	src/drivers/video/keys.h \
 	src/drivers/video/terminal.h \
 	src/lib/brkpt.h \
@@ -85,7 +92,8 @@ src/arch/atarist/dma.o: src/arch/atarist/dma.c \
 	src/chipset/wd179x.h \
 	src/config.h \
 	src/devices/memory.h \
-	src/drivers/block/block.h
+	src/drivers/block/block.h \
+	src/drivers/pri/pri.h
 
 src/arch/atarist/fdc.o: src/arch/atarist/fdc.c \
 	src/arch/atarist/fdc.h \
@@ -94,7 +102,7 @@ src/arch/atarist/fdc.o: src/arch/atarist/fdc.c \
 	src/config.h \
 	src/drivers/block/blkpsi.h \
 	src/drivers/block/block.h \
-	src/drivers/pri/mfm-ibm.h \
+	src/drivers/pri/pri-enc-mfm.h \
 	src/drivers/pri/pri-img.h \
 	src/drivers/pri/pri.h \
 	src/drivers/psi/psi-img.h \
@@ -122,6 +130,7 @@ src/arch/atarist/main.o: src/arch/atarist/main.c \
 	src/arch/atarist/rp5c15.h \
 	src/arch/atarist/smf.h \
 	src/arch/atarist/video.h \
+	src/arch/atarist/viking.h \
 	src/chipset/e6850.h \
 	src/chipset/e68901.h \
 	src/chipset/e8530.h \
@@ -132,6 +141,8 @@ src/arch/atarist/main.o: src/arch/atarist/main.c \
 	src/drivers/block/block.h \
 	src/drivers/char/char.h \
 	src/drivers/pri/pri.h \
+	src/drivers/sound/filter.h \
+	src/drivers/sound/sound.h \
 	src/drivers/video/keys.h \
 	src/drivers/video/terminal.h \
 	src/lib/brkpt.h \
@@ -156,6 +167,7 @@ src/arch/atarist/mem.o: src/arch/atarist/mem.c \
 	src/arch/atarist/rp5c15.h \
 	src/arch/atarist/smf.h \
 	src/arch/atarist/video.h \
+	src/arch/atarist/viking.h \
 	src/chipset/e6850.h \
 	src/chipset/e68901.h \
 	src/chipset/e8530.h \
@@ -166,6 +178,8 @@ src/arch/atarist/mem.o: src/arch/atarist/mem.c \
 	src/drivers/block/block.h \
 	src/drivers/char/char.h \
 	src/drivers/pri/pri.h \
+	src/drivers/sound/filter.h \
+	src/drivers/sound/sound.h \
 	src/drivers/video/keys.h \
 	src/drivers/video/terminal.h \
 	src/lib/brkpt.h \
@@ -184,6 +198,7 @@ src/arch/atarist/msg.o: src/arch/atarist/msg.c \
 	src/arch/atarist/rp5c15.h \
 	src/arch/atarist/smf.h \
 	src/arch/atarist/video.h \
+	src/arch/atarist/viking.h \
 	src/chipset/e6850.h \
 	src/chipset/e68901.h \
 	src/chipset/e8530.h \
@@ -194,6 +209,8 @@ src/arch/atarist/msg.o: src/arch/atarist/msg.c \
 	src/drivers/block/block.h \
 	src/drivers/char/char.h \
 	src/drivers/pri/pri.h \
+	src/drivers/sound/filter.h \
+	src/drivers/sound/sound.h \
 	src/drivers/video/keys.h \
 	src/drivers/video/terminal.h \
 	src/lib/brkpt.h \
@@ -209,7 +226,10 @@ src/arch/atarist/msg.o: src/arch/atarist/msg.c \
 src/arch/atarist/psg.o: src/arch/atarist/psg.c \
 	src/arch/atarist/main.h \
 	src/arch/atarist/psg.h \
-	src/config.h
+	src/arch/atarist/psg_vol.h \
+	src/config.h \
+	src/drivers/sound/filter.h \
+	src/drivers/sound/sound.h
 
 src/arch/atarist/rp5c15.o: src/arch/atarist/rp5c15.c \
 	src/arch/atarist/rp5c15.h
@@ -228,6 +248,173 @@ src/arch/atarist/video.o: src/arch/atarist/video.c \
 	src/drivers/video/keys.h \
 	src/drivers/video/terminal.h \
 	src/libini/libini.h
+
+src/arch/atarist/viking.o: src/arch/atarist/viking.c \
+	src/arch/atarist/main.h \
+	src/arch/atarist/viking.h \
+	src/config.h \
+	src/devices/memory.h \
+	src/drivers/video/keys.h \
+	src/drivers/video/terminal.h \
+	src/libini/libini.h
+
+src/arch/cpm80/bios.o: src/arch/cpm80/bios.c \
+	src/arch/cpm80/bios.h \
+	src/arch/cpm80/cpm80.h \
+	src/arch/cpm80/main.h \
+	src/config.h \
+	src/cpu/e8080/e8080.h \
+	src/devices/memory.h \
+	src/drivers/block/blkpsi.h \
+	src/drivers/block/block.h \
+	src/drivers/char/char.h \
+	src/drivers/psi/psi-img.h \
+	src/drivers/psi/psi.h \
+	src/lib/brkpt.h \
+	src/lib/cmd.h \
+	src/lib/log.h \
+	src/libini/libini.h
+
+src/arch/cpm80/cmd.o: src/arch/cpm80/cmd.c \
+	src/arch/cpm80/bios.h \
+	src/arch/cpm80/cpm80.h \
+	src/arch/cpm80/main.h \
+	src/config.h \
+	src/cpu/e8080/e8080.h \
+	src/devices/memory.h \
+	src/drivers/block/block.h \
+	src/drivers/char/char.h \
+	src/lib/brkpt.h \
+	src/lib/cmd.h \
+	src/lib/console.h \
+	src/lib/log.h \
+	src/lib/monitor.h \
+	src/lib/sysdep.h \
+	src/libini/libini.h
+
+src/arch/cpm80/cpm80.o: src/arch/cpm80/cpm80.c \
+	src/arch/cpm80/bios.h \
+	src/arch/cpm80/cpm80.h \
+	src/arch/cpm80/main.h \
+	src/arch/cpm80/msg.h \
+	src/config.h \
+	src/cpu/e8080/e8080.h \
+	src/devices/memory.h \
+	src/drivers/block/block.h \
+	src/drivers/char/char.h \
+	src/lib/brkpt.h \
+	src/lib/cmd.h \
+	src/lib/inidsk.h \
+	src/lib/iniram.h \
+	src/lib/load.h \
+	src/lib/log.h \
+	src/lib/msg.h \
+	src/lib/path.h \
+	src/lib/sysdep.h \
+	src/libini/libini.h
+
+src/arch/cpm80/main.o: src/arch/cpm80/main.c \
+	src/arch/cpm80/cmd.h \
+	src/arch/cpm80/cpm80.h \
+	src/arch/cpm80/main.h \
+	src/arch/cpm80/msg.h \
+	src/config.h \
+	src/cpu/e8080/e8080.h \
+	src/devices/memory.h \
+	src/drivers/block/block.h \
+	src/drivers/char/char.h \
+	src/lib/brkpt.h \
+	src/lib/cmd.h \
+	src/lib/console.h \
+	src/lib/getopt.h \
+	src/lib/log.h \
+	src/lib/monitor.h \
+	src/lib/path.h \
+	src/lib/sysdep.h \
+	src/libini/libini.h
+
+src/arch/cpm80/msg.o: src/arch/cpm80/msg.c \
+	src/arch/cpm80/cpm80.h \
+	src/arch/cpm80/main.h \
+	src/arch/cpm80/msg.h \
+	src/config.h \
+	src/cpu/e8080/e8080.h \
+	src/devices/memory.h \
+	src/drivers/block/block.h \
+	src/drivers/char/char.h \
+	src/lib/brkpt.h \
+	src/lib/cmd.h \
+	src/lib/console.h \
+	src/lib/inidsk.h \
+	src/lib/log.h \
+	src/lib/monitor.h \
+	src/lib/msg.h \
+	src/libini/libini.h
+
+src/arch/dos/dos.o: src/arch/dos/dos.c \
+	src/arch/dos/dos.h \
+	src/arch/dos/dosmem.h \
+	src/arch/dos/int.h \
+	src/arch/dos/main.h \
+	src/config.h \
+	src/cpu/e8086/e8086.h
+
+src/arch/dos/dosmem.o: src/arch/dos/dosmem.c \
+	src/arch/dos/dos.h \
+	src/arch/dos/dosmem.h \
+	src/arch/dos/main.h \
+	src/config.h \
+	src/cpu/e8086/e8086.h
+
+src/arch/dos/exec.o: src/arch/dos/exec.c \
+	src/arch/dos/dos.h \
+	src/arch/dos/dosmem.h \
+	src/arch/dos/exec.h \
+	src/arch/dos/main.h \
+	src/config.h \
+	src/cpu/e8086/e8086.h
+
+src/arch/dos/int.o: src/arch/dos/int.c \
+	src/arch/dos/dos.h \
+	src/arch/dos/int.h \
+	src/arch/dos/int10.h \
+	src/arch/dos/int21.h \
+	src/arch/dos/main.h \
+	src/config.h \
+	src/cpu/e8086/e8086.h
+
+src/arch/dos/int10.o: src/arch/dos/int10.c \
+	src/arch/dos/dos.h \
+	src/arch/dos/int10.h \
+	src/arch/dos/main.h \
+	src/config.h \
+	src/cpu/e8086/e8086.h
+
+src/arch/dos/int21.o: src/arch/dos/int21.c \
+	src/arch/dos/dos.h \
+	src/arch/dos/dosmem.h \
+	src/arch/dos/int21.h \
+	src/arch/dos/main.h \
+	src/arch/dos/path.h \
+	src/config.h \
+	src/cpu/e8086/e8086.h
+
+src/arch/dos/main.o: src/arch/dos/main.c \
+	src/arch/dos/dos.h \
+	src/arch/dos/exec.h \
+	src/arch/dos/main.h \
+	src/arch/dos/path.h \
+	src/config.h \
+	src/cpu/e8086/e8086.h \
+	src/lib/getopt.h \
+	src/lib/sysdep.h
+
+src/arch/dos/path.o: src/arch/dos/path.c \
+	src/arch/dos/dos.h \
+	src/arch/dos/main.h \
+	src/arch/dos/path.h \
+	src/config.h \
+	src/cpu/e8086/e8086.h
 
 src/arch/ibmpc/cassette.o: src/arch/ibmpc/cassette.c \
 	src/arch/ibmpc/cassette.h \
@@ -680,7 +867,7 @@ src/arch/macplus/iwm-io.o: src/arch/macplus/iwm-io.c \
 	src/config.h \
 	src/drivers/block/blkpsi.h \
 	src/drivers/block/block.h \
-	src/drivers/pri/gcr-mac.h \
+	src/drivers/pri/pri-enc-gcr.h \
 	src/drivers/pri/pri-img.h \
 	src/drivers/pri/pri.h \
 	src/drivers/psi/psi-img.h \
@@ -945,7 +1132,7 @@ src/arch/rc759/fdc.o: src/arch/rc759/fdc.c \
 	src/config.h \
 	src/drivers/block/blkpsi.h \
 	src/drivers/block/block.h \
-	src/drivers/pri/mfm-ibm.h \
+	src/drivers/pri/pri-enc-mfm.h \
 	src/drivers/pri/pri-img.h \
 	src/drivers/pri/pri.h \
 	src/drivers/psi/psi-img.h \
@@ -1114,7 +1301,6 @@ src/arch/sim405/cmd_ppc.o: src/arch/sim405/cmd_ppc.c \
 	src/arch/sim405/cmd_ppc.h \
 	src/arch/sim405/main.h \
 	src/arch/sim405/pci.h \
-	src/arch/sim405/sercons.h \
 	src/arch/sim405/sim405.h \
 	src/chipset/82xx/e8250.h \
 	src/chipset/clock/ds1743.h \
@@ -1135,13 +1321,10 @@ src/arch/sim405/cmd_ppc.o: src/arch/sim405/cmd_ppc.c \
 	src/lib/brkpt.h \
 	src/lib/cmd.h \
 	src/lib/console.h \
-	src/lib/iniata.h \
 	src/lib/inidsk.h \
-	src/lib/iniram.h \
 	src/lib/load.h \
 	src/lib/log.h \
 	src/lib/monitor.h \
-	src/lib/msg.h \
 	src/lib/sysdep.h \
 	src/libini/libini.h
 
@@ -1149,7 +1332,6 @@ src/arch/sim405/main.o: src/arch/sim405/main.c \
 	src/arch/sim405/cmd_ppc.h \
 	src/arch/sim405/main.h \
 	src/arch/sim405/pci.h \
-	src/arch/sim405/sercons.h \
 	src/arch/sim405/sim405.h \
 	src/chipset/82xx/e8250.h \
 	src/chipset/clock/ds1743.h \
@@ -1170,56 +1352,26 @@ src/arch/sim405/main.o: src/arch/sim405/main.c \
 	src/lib/brkpt.h \
 	src/lib/cmd.h \
 	src/lib/console.h \
-	src/lib/iniata.h \
+	src/lib/getopt.h \
 	src/lib/inidsk.h \
-	src/lib/iniram.h \
 	src/lib/load.h \
 	src/lib/log.h \
 	src/lib/monitor.h \
-	src/lib/msg.h \
+	src/lib/path.h \
 	src/lib/sysdep.h \
 	src/libini/libini.h
 
 src/arch/sim405/pci.o: src/arch/sim405/pci.c \
-	src/arch/sim405/cmd_ppc.h \
 	src/arch/sim405/main.h \
 	src/arch/sim405/pci.h \
-	src/arch/sim405/sercons.h \
-	src/arch/sim405/sim405.h \
-	src/chipset/82xx/e8250.h \
-	src/chipset/clock/ds1743.h \
-	src/chipset/ppc405/uic.h \
 	src/config.h \
-	src/cpu/ppc405/ppc405.h \
-	src/devices/ata.h \
-	src/devices/clock/ds1743.h \
-	src/devices/device.h \
 	src/devices/memory.h \
-	src/devices/nvram.h \
-	src/devices/pci-ata.h \
 	src/devices/pci.h \
-	src/devices/serport.h \
-	src/devices/slip.h \
-	src/drivers/block/block.h \
-	src/drivers/char/char.h \
-	src/lib/brkpt.h \
-	src/lib/cmd.h \
-	src/lib/console.h \
-	src/lib/iniata.h \
-	src/lib/inidsk.h \
-	src/lib/iniram.h \
-	src/lib/load.h \
-	src/lib/log.h \
-	src/lib/monitor.h \
-	src/lib/msg.h \
-	src/lib/sysdep.h \
-	src/libini/libini.h
+	src/lib/log.h
 
 src/arch/sim405/sercons.o: src/arch/sim405/sercons.c \
-	src/arch/sim405/cmd_ppc.h \
 	src/arch/sim405/main.h \
 	src/arch/sim405/pci.h \
-	src/arch/sim405/sercons.h \
 	src/arch/sim405/sim405.h \
 	src/chipset/82xx/e8250.h \
 	src/chipset/clock/ds1743.h \
@@ -1239,19 +1391,13 @@ src/arch/sim405/sercons.o: src/arch/sim405/sercons.c \
 	src/drivers/char/char.h \
 	src/lib/brkpt.h \
 	src/lib/cmd.h \
-	src/lib/console.h \
-	src/lib/iniata.h \
 	src/lib/inidsk.h \
-	src/lib/iniram.h \
 	src/lib/load.h \
 	src/lib/log.h \
-	src/lib/monitor.h \
-	src/lib/msg.h \
 	src/lib/sysdep.h \
 	src/libini/libini.h
 
 src/arch/sim405/sim405.o: src/arch/sim405/sim405.c \
-	src/arch/sim405/cmd_ppc.h \
 	src/arch/sim405/main.h \
 	src/arch/sim405/pci.h \
 	src/arch/sim405/sercons.h \
@@ -1274,13 +1420,11 @@ src/arch/sim405/sim405.o: src/arch/sim405/sim405.c \
 	src/drivers/char/char.h \
 	src/lib/brkpt.h \
 	src/lib/cmd.h \
-	src/lib/console.h \
 	src/lib/iniata.h \
 	src/lib/inidsk.h \
 	src/lib/iniram.h \
 	src/lib/load.h \
 	src/lib/log.h \
-	src/lib/monitor.h \
 	src/lib/msg.h \
 	src/lib/sysdep.h \
 	src/libini/libini.h
@@ -1599,7 +1743,8 @@ src/chipset/ppc405/uic.o: src/chipset/ppc405/uic.c \
 	src/chipset/ppc405/uic.h
 
 src/chipset/wd179x.o: src/chipset/wd179x.c \
-	src/chipset/wd179x.h
+	src/chipset/wd179x.h \
+	src/drivers/pri/pri.h
 
 src/cpu/arm/arm.o: src/cpu/arm/arm.c \
 	src/cpu/arm/arm.h \
@@ -1664,6 +1809,54 @@ src/cpu/e68000/opcodes.o: src/cpu/e68000/opcodes.c \
 src/cpu/e68000/ops-020.o: src/cpu/e68000/ops-020.c \
 	src/cpu/e68000/e68000.h \
 	src/cpu/e68000/internal.h
+
+src/cpu/e8080/dis_z80.o: src/cpu/e8080/dis_z80.c \
+	src/cpu/e8080/e8080.h \
+	src/cpu/e8080/internal.h
+
+src/cpu/e8080/disasm.o: src/cpu/e8080/disasm.c \
+	src/cpu/e8080/e8080.h \
+	src/cpu/e8080/internal.h
+
+src/cpu/e8080/e8080.o: src/cpu/e8080/e8080.c \
+	src/cpu/e8080/e8080.h \
+	src/cpu/e8080/internal.h
+
+src/cpu/e8080/flags.o: src/cpu/e8080/flags.c \
+	src/cpu/e8080/e8080.h \
+	src/cpu/e8080/internal.h
+
+src/cpu/e8080/op_cb.o: src/cpu/e8080/op_cb.c \
+	src/cpu/e8080/e8080.h \
+	src/cpu/e8080/internal.h
+
+src/cpu/e8080/op_dd.o: src/cpu/e8080/op_dd.c \
+	src/cpu/e8080/e8080.h \
+	src/cpu/e8080/internal.h
+
+src/cpu/e8080/op_dd_cb.o: src/cpu/e8080/op_dd_cb.c \
+	src/cpu/e8080/e8080.h \
+	src/cpu/e8080/internal.h
+
+src/cpu/e8080/op_ed.o: src/cpu/e8080/op_ed.c \
+	src/cpu/e8080/e8080.h \
+	src/cpu/e8080/internal.h
+
+src/cpu/e8080/op_fd.o: src/cpu/e8080/op_fd.c \
+	src/cpu/e8080/e8080.h \
+	src/cpu/e8080/internal.h
+
+src/cpu/e8080/op_fd_cb.o: src/cpu/e8080/op_fd_cb.c \
+	src/cpu/e8080/e8080.h \
+	src/cpu/e8080/internal.h
+
+src/cpu/e8080/op_z80.o: src/cpu/e8080/op_z80.c \
+	src/cpu/e8080/e8080.h \
+	src/cpu/e8080/internal.h
+
+src/cpu/e8080/opcodes.o: src/cpu/e8080/opcodes.c \
+	src/cpu/e8080/e8080.h \
+	src/cpu/e8080/internal.h
 
 src/cpu/e8086/disasm.o: src/cpu/e8086/disasm.c \
 	src/cpu/e8086/e8086.h \
@@ -1997,6 +2190,10 @@ src/drivers/char/char-tios.o: src/drivers/char/char-tios.c \
 	src/drivers/char/char.h \
 	src/drivers/options.h
 
+src/drivers/char/char-wincom.o: src/drivers/char/char-wincom.c \
+	src/drivers/char/char-wincom.h \
+	src/drivers/char/char.h
+
 src/drivers/char/char.o: src/drivers/char/char.c \
 	src/config.h \
 	src/drivers/char/char.h \
@@ -2006,13 +2203,19 @@ src/drivers/options.o: src/drivers/options.c \
 	src/config.h \
 	src/drivers/options.h
 
-src/drivers/pri/gcr-mac.o: src/drivers/pri/gcr-mac.c \
-	src/drivers/pri/gcr-mac.h \
+src/drivers/pri/pri-enc-fm.o: src/drivers/pri/pri-enc-fm.c \
+	src/drivers/pri/pri-enc-fm.h \
+	src/drivers/pri/pri-img.h \
 	src/drivers/pri/pri.h \
 	src/drivers/psi/psi.h
 
-src/drivers/pri/mfm-ibm.o: src/drivers/pri/mfm-ibm.c \
-	src/drivers/pri/mfm-ibm.h \
+src/drivers/pri/pri-enc-gcr.o: src/drivers/pri/pri-enc-gcr.c \
+	src/drivers/pri/pri-enc-gcr.h \
+	src/drivers/pri/pri.h \
+	src/drivers/psi/psi.h
+
+src/drivers/pri/pri-enc-mfm.o: src/drivers/pri/pri-enc-mfm.c \
+	src/drivers/pri/pri-enc-mfm.h \
 	src/drivers/pri/pri-img.h \
 	src/drivers/pri/pri.h \
 	src/drivers/psi/psi.h
@@ -2058,6 +2261,11 @@ src/drivers/psi/psi-img-dc42.o: src/drivers/psi/psi-img-dc42.c \
 
 src/drivers/psi/psi-img-imd.o: src/drivers/psi/psi-img-imd.c \
 	src/drivers/psi/psi-img-imd.h \
+	src/drivers/psi/psi-io.h \
+	src/drivers/psi/psi.h
+
+src/drivers/psi/psi-img-mac.o: src/drivers/psi/psi-img-mac.c \
+	src/drivers/psi/psi-img-mac.h \
 	src/drivers/psi/psi-io.h \
 	src/drivers/psi/psi.h
 
@@ -2120,6 +2328,7 @@ src/drivers/psi/psi-img.o: src/drivers/psi/psi-img.c \
 	src/drivers/psi/psi-img-cp2.h \
 	src/drivers/psi/psi-img-dc42.h \
 	src/drivers/psi/psi-img-imd.h \
+	src/drivers/psi/psi-img-mac.h \
 	src/drivers/psi/psi-img-msa.h \
 	src/drivers/psi/psi-img-pfdc.h \
 	src/drivers/psi/psi-img-psi.h \
@@ -2337,6 +2546,30 @@ src/libini/write.o: src/libini/write.c \
 	src/config.h \
 	src/libini/libini.h
 
+src/utils/pce-img/commit.o: src/utils/pce-img/commit.c \
+	src/config.h \
+	src/drivers/block/block.h \
+	src/lib/getopt.h \
+	src/utils/pce-img/pce-img.h
+
+src/utils/pce-img/convert.o: src/utils/pce-img/convert.c \
+	src/config.h \
+	src/drivers/block/block.h \
+	src/lib/getopt.h \
+	src/utils/pce-img/pce-img.h
+
+src/utils/pce-img/cow.o: src/utils/pce-img/cow.c \
+	src/config.h \
+	src/drivers/block/block.h \
+	src/lib/getopt.h \
+	src/utils/pce-img/pce-img.h
+
+src/utils/pce-img/create.o: src/utils/pce-img/create.c \
+	src/config.h \
+	src/drivers/block/block.h \
+	src/lib/getopt.h \
+	src/utils/pce-img/pce-img.h
+
 src/utils/pce-img/pce-img.o: src/utils/pce-img/pce-img.c \
 	src/config.h \
 	src/drivers/block/blkcow.h \
@@ -2349,17 +2582,101 @@ src/utils/pce-img/pce-img.o: src/utils/pce-img/pce-img.c \
 	src/drivers/psi/psi-img.h \
 	src/drivers/psi/psi.h \
 	src/lib/getopt.h \
+	src/lib/sysdep.h \
 	src/utils/pce-img/pce-img.h
+
+src/utils/pri/comment.o: src/utils/pri/comment.c \
+	src/config.h \
+	src/drivers/pri/pri.h \
+	src/drivers/psi/psi.h \
+	src/utils/pri/main.h
+
+src/utils/pri/decode.o: src/utils/pri/decode.c \
+	src/config.h \
+	src/drivers/pri/pri-enc-fm.h \
+	src/drivers/pri/pri-enc-gcr.h \
+	src/drivers/pri/pri-enc-mfm.h \
+	src/drivers/pri/pri-img.h \
+	src/drivers/pri/pri.h \
+	src/drivers/psi/psi-img.h \
+	src/drivers/psi/psi.h \
+	src/utils/pri/main.h
+
+src/utils/pri/delete.o: src/utils/pri/delete.c \
+	src/config.h \
+	src/drivers/pri/pri.h \
+	src/drivers/psi/psi.h \
+	src/utils/pri/main.h
+
+src/utils/pri/edit.o: src/utils/pri/edit.c \
+	src/config.h \
+	src/drivers/pri/pri.h \
+	src/drivers/psi/psi.h \
+	src/utils/pri/main.h
+
+src/utils/pri/encode.o: src/utils/pri/encode.c \
+	src/config.h \
+	src/drivers/pri/pri-enc-fm.h \
+	src/drivers/pri/pri-enc-gcr.h \
+	src/drivers/pri/pri-enc-mfm.h \
+	src/drivers/pri/pri-img.h \
+	src/drivers/pri/pri.h \
+	src/drivers/psi/psi-img.h \
+	src/drivers/psi/psi.h \
+	src/utils/pri/main.h
+
+src/utils/pri/event.o: src/utils/pri/event.c \
+	src/config.h \
+	src/drivers/pri/pri.h \
+	src/drivers/psi/psi.h \
+	src/utils/pri/main.h
+
+src/utils/pri/info.o: src/utils/pri/info.c \
+	src/config.h \
+	src/drivers/pri/pri.h \
+	src/drivers/psi/psi.h \
+	src/utils/pri/main.h
+
+src/utils/pri/list.o: src/utils/pri/list.c \
+	src/config.h \
+	src/drivers/pri/pri.h \
+	src/drivers/psi/psi.h \
+	src/utils/pri/main.h
 
 src/utils/pri/main.o: src/utils/pri/main.c \
 	src/config.h \
-	src/drivers/pri/gcr-mac.h \
-	src/drivers/pri/mfm-ibm.h \
+	src/drivers/pri/pri-enc-fm.h \
+	src/drivers/pri/pri-enc-mfm.h \
 	src/drivers/pri/pri-img.h \
 	src/drivers/pri/pri.h \
 	src/drivers/psi/psi-img.h \
 	src/drivers/psi/psi.h \
 	src/lib/getopt.h \
+	src/utils/pri/main.h
+
+src/utils/pri/merge.o: src/utils/pri/merge.c \
+	src/config.h \
+	src/drivers/pri/pri-img.h \
+	src/drivers/pri/pri.h \
+	src/drivers/psi/psi.h \
+	src/utils/pri/main.h
+
+src/utils/pri/new.o: src/utils/pri/new.c \
+	src/config.h \
+	src/drivers/pri/pri.h \
+	src/drivers/psi/psi.h \
+	src/utils/pri/main.h
+
+src/utils/pri/rotate.o: src/utils/pri/rotate.c \
+	src/config.h \
+	src/drivers/pri/pri.h \
+	src/drivers/psi/psi.h \
+	src/utils/pri/main.h
+
+src/utils/pri/text.o: src/utils/pri/text.c \
+	src/config.h \
+	src/drivers/pri/pri.h \
+	src/drivers/psi/psi.h \
 	src/utils/pri/main.h
 
 src/utils/psi/comment.o: src/utils/psi/comment.c \
@@ -2402,6 +2719,7 @@ src/utils/psi/load.o: src/utils/psi/load.c \
 src/utils/psi/main.o: src/utils/psi/main.c \
 	src/config.h \
 	src/drivers/psi/psi-img-raw.h \
+	src/drivers/psi/psi-img-stx.h \
 	src/drivers/psi/psi-img.h \
 	src/drivers/psi/psi.h \
 	src/lib/getopt.h \

@@ -3,9 +3,9 @@
  *****************************************************************************/
 
 /*****************************************************************************
- * File name:   src/drivers/pri/gcr-mac.h                                    *
- * Created:     2012-02-01 by Hampa Hug <hampa@hampa.ch>                     *
- * Copyright:   (C) 2012-2013 Hampa Hug <hampa@hampa.ch>                     *
+ * File name:   src/arch/dos/exec.h                                          *
+ * Created:     2012-12-31 by Hampa Hug <hampa@hampa.ch>                     *
+ * Copyright:   (C) 2012-2015 Hampa Hug <hampa@hampa.ch>                     *
  *****************************************************************************/
 
 /*****************************************************************************
@@ -20,20 +20,14 @@
  *****************************************************************************/
 
 
-#ifndef PCE_PRI_GCR_MAC_H
-#define PCE_PRI_GCR_MAC_H 1
+#ifndef PCE_DOS_EXEC_H
+#define PCE_DOS_EXEC_H 1
 
 
-#include <drivers/pri/pri.h>
-#include <drivers/psi/psi.h>
+#include "dos.h"
 
 
-psi_trk_t *pri_decode_gcr_trk (pri_trk_t *trk, unsigned h);
-psi_img_t *pri_decode_gcr (pri_img_t *img);
-
-int pri_encode_gcr_trk (pri_trk_t *dtrk, psi_trk_t *strk, unsigned fmt);
-int pri_encode_gcr_img (pri_img_t *dimg, psi_img_t *simg);
-pri_img_t *pri_encode_gcr (psi_img_t *img);
+int sim_exec (dos_t *sim, const char *name);
 
 
 #endif
