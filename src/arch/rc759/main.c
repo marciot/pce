@@ -377,7 +377,7 @@ int main (int argc, char *argv[])
 
 	rc759_reset (par_sim);
 
-#ifdef EMSCRIPTEM
+#ifdef EMSCRIPTEN
 	rc759_run_emscripten(par_sim);
 	exit(1);
 #endif
