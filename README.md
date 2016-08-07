@@ -1,27 +1,29 @@
 
-PCE for RetroWeb Vintage Computer Museum
-========================================
+PCE for the RetroWeb Vintage Computer Museum
+============================================
 
-This repository contains the JavaScript version of PCE used in the [retroweb-vintage-computer-museum](https://github.com/marciot/retroweb-vintage-computer-museum). This provides the emulation core for the
-following machines:
+This repository contains the JavaScript version of PCE used in the [retroweb-vintage-computer-museum](https://github.com/marciot/retroweb-vintage-computer-museum). This JavaScript port of PCE provides the
+emulation core for the following machines:
 
-	* Apple Macintosh Plus
-	* IBM PC Model 5150 and 5160
-	* Atari 1040ST
-	* Regnecentralen RC759 Piccoline
+* Apple Macintosh Plus
+* IBM PC Model 5150 and 5160
+* Atari 1040ST
+* Regnecentralen RC759 Piccoline
 
-This code is derived from James Friend's [PCE.js](https://github.com/jsdf/pce), which in turn is based off Hampa Hug's [PCE](http://www.hampa.ch/pce/).
+This code is derived from James Friend's [PCE.js](https://github.com/jsdf/pce) port of PCE, which in turn is based off
+Hampa Hug's [PCE](http://www.hampa.ch/pce) which is written in ANSI C.
 
-## How does this code differ from Hampa Hug's PCE distribution or James Friend's PCE.js?
+## How does this code differ from Hampa Hug's PCE distribution?
 
 1. The main loop is modified so that it can be run by Emscripten.
-2. Exposed to JavaScript the ability to send messages to the emulator via *_set_msg to allow for disk insertion.
-3. Exposed some of the e8530.c routines to JavaScript to support LocalTalk emulation
+2. Exposed to JavaScript the ability to send messages to the emulator via `*_set_msg` to allow for on-the-fly disk insertion.
+3. Exposed some of the e8530.c routines to JavaScript to support experiments with LocalTalk emulation
 
 ## How does this code differ from James Friend's PCE.js?
 
-1. James build scripts and UI have been removed, since this functionality is provided by [retroweb-vintage-computer-museum](https://github.com/marciot/retroweb-vintage-computer-museum).
+1. James' build scripts and UI have been removed and replaced with the code at [retroweb-vintage-computer-museum](https://github.com/marciot/retroweb-vintage-computer-museum).
 2. Build instructions have been revised for the Emscripten available as of August 7, 2016 (emcc version 1.36.0)
+3. Upstream changes from Hampa's repository have been pulled as of August 7, 2016
 
 ## Build instructions
 
@@ -36,7 +38,7 @@ Make sure your Emscripten toolchain is up to date by executing the following com
 source ./emsdk_env.sh
 ```
 
-Use the following commands to download the emulator code and build the emulators:
+Use the following commands to clone the emulator code and build the emulators:
 
 ```
 git clone https://github.com/marciot/retroweb-pcejs-jsdf.git
@@ -87,7 +89,7 @@ The "pce-xxx.js" files can be used as drop in replacements for those in the "emu
 
 ## How do I pull changes from the upstream repository?
 
-Although James Friend no longer updates his PCE.js port, Hampa Hug continues to do work on the emulator code. I have only tested the code included in my GitHub repository, but if you would like to merge upstream changes yourself, you may do so by issuing the following commands:
+Although James Friend no longer updates his PCE.js port, Hampa Hug continues to do work on the emulator code. I have only tested the code included in this GitHub repository, but if you would like to merge upstream changes yourself, you may do so by issuing the following commands:
 
 ```
 ~/retroweb-pcejs-jsdf$ git remote add upstream git://git.hampa.ch/pce.git
@@ -96,4 +98,13 @@ Although James Friend no longer updates his PCE.js port, Hampa Hug continues to 
 ~/retroweb-pcejs-jsdf$ git merge upstream/master
 ```
 
-Reference: https://help.github.com/articles/syncing-a-fork/
+**Reference:** https://help.github.com/articles/syncing-a-fork
+
+## Why is SDL_CreateRGBSurfaceFrom being disabled?
+
+The `SDL_CreateRGBSurfaceFrom` that ships with Emscripten only supports a depth of 32. James Friend patched this routine to support a
+depth of 8 bits, required by PCE, but his repository did so through a modified version of the Emscripten toolchain which wasn't
+kept up to date.
+
+Instead of doing that, I rename the function after compiling the JavaScript files (you could also manually delete
+the entire function to save space) and then provide the patch elsewhere (namely, in "emulators/emscripten-interface.js" from [retroweb-vintage-computer-museum](https://github.com/marciot/retroweb-vintage-computer-museum)).
