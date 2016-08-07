@@ -14,9 +14,9 @@ This code is derived from James Friend's [PCE.js](https://github.com/jsdf/pce), 
 
 ## How does this code differ from Hampa Hug's PCE distribution or James Friend's PCE.js?
 
-* The main loop is modified so that it can be run by Emscripten.
-* Exposed to JavaScript the ability to send messages to the emulator via *_set_msg to allow for disk insertion.
-* Exposed some of the e8530.c routines to JavaScript to support LocalTalk emulation
+1. The main loop is modified so that it can be run by Emscripten.
+2. Exposed to JavaScript the ability to send messages to the emulator via *_set_msg to allow for disk insertion.
+3. Exposed some of the e8530.c routines to JavaScript to support LocalTalk emulation
 
 ## Build instructions
 
@@ -76,5 +76,5 @@ sed pce-ibmpc.js   -i -e 's/function _SDL_CreateRGBSurfaceFrom/function _SDL_Cre
 sed pce-atarist.js -i -e 's/function _SDL_CreateRGBSurfaceFrom/function _SDL_CreateRGBSurfaceFrom_disabled/'
 ```
 
-The "pce-*.js" can be used as drop in replacements for the emulator files in the "emulators/pce-*" directories of the
-[retroweb-vintage-computer-museum](https://github.com/marciot/retroweb-vintage-computer-museum) source.
+The "pce-xxx.js" files can be used as drop in replacements for those in the "emulators/pce-xxx" directories of the
+[retroweb-vintage-computer-museum](https://github.com/marciot/retroweb-vintage-computer-museum) distribution.
