@@ -5,14 +5,14 @@ PCE for RetroWeb Vintage Computer Museum
 This repository contains the JavaScript version of PCE used in the [retroweb-vintage-computer-museum](https://github.com/marciot/retroweb-vintage-computer-museum). This provides the emulation core for the
 following machines:
 
-	* Apple Macintosh Plus
-	* IBM PC Model 5150 and 5160
-	* Atari 1040ST
-	* Regnecentralen RC759 Piccoline
+* Apple Macintosh Plus
+* IBM PC Model 5150 and 5160
+* Atari 1040ST
+* Regnecentralen RC759 Piccoline
 
 This code is derived from James Friend's [PCE.js](https://github.com/jsdf/pce), which in turn is based off Hampa Hug's [PCE](http://www.hampa.ch/pce/).
 
-## How does this code differ from Hampa Hug's PCE distribution or James Friend's PCE.js?
+## How does this code differ from Hampa Hug's PCE distribution?
 
 1. The main loop is modified so that it can be run by Emscripten.
 2. Exposed to JavaScript the ability to send messages to the emulator via *_set_msg to allow for disk insertion.
@@ -20,7 +20,7 @@ This code is derived from James Friend's [PCE.js](https://github.com/jsdf/pce), 
 
 ## How does this code differ from James Friend's PCE.js?
 
-1. James build scripts and UI have been removed, since this functionality is provided by [retroweb-vintage-computer-museum](https://github.com/marciot/retroweb-vintage-computer-museum).
+1. James' build scripts and UI have been removed and replaced with the code at [retroweb-vintage-computer-museum](https://github.com/marciot/retroweb-vintage-computer-museum).
 2. Build instructions have been revised for the Emscripten available as of August 7, 2016 (emcc version 1.36.0)
 
 ## Build instructions
@@ -97,3 +97,10 @@ Although James Friend no longer updates his PCE.js port, Hampa Hug continues to 
 ```
 
 Reference: https://help.github.com/articles/syncing-a-fork/
+
+## Why is SDL_CreateRGBSurfaceFrom being disabled?
+
+The `SDL_CreateRGBSurfaceFrom` that ships with Emscripten only supports a depth of 32. James Friend patched this routine to support a
+depth of 8 bits, required by PCE, but his repository did so through a modified version of the Emscripten toolchain which hasn't been
+kept up to date. So instead of doing that, I rename the function after compiling the JavaScript files (you could also manually delete
+the entire function to save space) and then provide the patch elsewhere (namely, in "emulators/emscripten-interface.js" from [retroweb-vintage-computer-museum](https://github.com/marciot/retroweb-vintage-computer-museum)).
