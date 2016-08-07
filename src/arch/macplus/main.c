@@ -233,17 +233,6 @@ int main (int argc, char *argv[])
 
 	ini_str_init (&par_ini_str);
 
-	int emscripten;
-	emscripten = 0;
-	#ifdef EMSCRIPTEN
-		// replace command line arg settings
-		pce_log_set_level (stderr, MSG_DEB);
-		cfg = "roms/pce-config.cfg";
-		// run = 1;
-		// nomon = 1;
-		emscripten = 1;
-	#endif
-
 	while (1) {
 		r = pce_getopt (argc, argv, &optarg, opts);
 
@@ -399,10 +388,11 @@ int main (int argc, char *argv[])
 
 	mac_reset (par_sim);
 
-	if (emscripten) {
-		mac_run_emscripten(par_sim);
-		exit(1);
-	}
+#ifdef EMSCRIPTEN
+	mac_run_emscripten(par_sim);
+	exit(1);
+#endif
+
 	if (nomon) {
 		while (par_sim->brk != PCE_BRK_ABORT) {
 			mac_run (par_sim);

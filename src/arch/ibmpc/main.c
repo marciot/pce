@@ -335,18 +335,6 @@ int main (int argc, char *argv[])
 		}
 	}
 
-	int emscripten;
-	emscripten = 0;
-	#ifdef EMSCRIPTEN
-		// replace command line arg settings
-		pce_log_set_level (stderr, MSG_DEB);
-		par_video = "vga";
-		cfg = "roms/pce-config.cfg";
-		// run = 1;
-		// nomon = 1;
-		emscripten = 1;
-	#endif
-
 	pc_log_banner();
 
 	if (pce_load_config (par_cfg, cfg)) {
@@ -392,10 +380,11 @@ int main (int argc, char *argv[])
 	pc_reset (par_pc);
 
 
-	if (emscripten || 1) {
-		pc_run_emscripten(par_pc);
-		exit(1);
-	}
+#ifdef EMSCRIPTEN
+	pc_run_emscripten(par_pc);
+	exit(1);
+#endif
+
 	if (nomon) {
 		while (par_pc->brk != PCE_BRK_ABORT) {
 			pc_run (par_pc);
