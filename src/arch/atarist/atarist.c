@@ -5,7 +5,7 @@
 /*****************************************************************************
  * File name:   src/arch/atarist/atarist.c                                   *
  * Created:     2011-03-17 by Hampa Hug <hampa@hampa.ch>                     *
- * Copyright:   (C) 2011-2013 Hampa Hug <hampa@hampa.ch>                     *
+ * Copyright:   (C) 2011-2015 Hampa Hug <hampa@hampa.ch>                     *
  *****************************************************************************/
 
 /*****************************************************************************
@@ -30,6 +30,7 @@
 #include "rp5c15.h"
 #include "smf.h"
 #include "video.h"
+#include "viking.h"
 
 #include <string.h>
 
@@ -42,6 +43,7 @@
 
 #include <drivers/block/block.h>
 #include <drivers/char/char.h>
+#include <drivers/sound/sound.h>
 #include <drivers/video/terminal.h>
 #include <drivers/video/keys.h>
 
@@ -228,6 +230,19 @@ void st_set_port_b (atari_st_t *sim, unsigned char val)
 }
 
 static
+int st_set_magic (atari_st_t *sim, pce_key_t key)
+{
+	if (key == PCE_KEY_TAB) {
+		st_set_msg (sim, "emu.viking.toggle", "1");
+	}
+	else {
+		return (1);
+	}
+
+	return (0);
+}
+
+static
 void st_setup_system (atari_st_t *sim, ini_sct_t *ini)
 {
 	int        mono, fastboot;
@@ -270,7 +285,6 @@ void st_setup_system (atari_st_t *sim, ini_sct_t *ini)
 		if (sim->parport_drv == NULL) {
 			pce_log (MSG_ERR, "*** can't open driver (%s)\n", parport);
 		}
-
 	}
 
 	if (serport != NULL) {
@@ -281,7 +295,6 @@ void st_setup_system (atari_st_t *sim, ini_sct_t *ini)
 		if (sim->serport_drv == NULL) {
 			pce_log (MSG_ERR, "*** can't open driver (%s)\n", serport);
 		}
-
 	}
 }
 
@@ -450,6 +463,7 @@ void st_setup_kbd (atari_st_t *sim, ini_sct_t *ini)
 	pce_log_tag (MSG_INF, "IKBD:", "initialized\n");
 
 	st_kbd_init (&sim->kbd);
+	st_kbd_set_magic (&sim->kbd, sim, st_set_magic);
 }
 
 static
@@ -463,11 +477,52 @@ void st_setup_rtc (atari_st_t *sim, ini_sct_t *ini)
 static
 void st_setup_psg (atari_st_t *sim, ini_sct_t *ini)
 {
-	pce_log_tag (MSG_INF, "PSG:", "initialized\n");
+	ini_sct_t     *sct;
+	const char    *drv, *aym;
+	int           highpass;
+	unsigned long lowpass, aymres, srate;
 
 	st_psg_init (&sim->psg);
 	st_psg_set_port_a_fct (&sim->psg, sim, st_set_port_a);
 	st_psg_set_port_b_fct (&sim->psg, sim, st_set_port_b);
+
+	if ((sct = ini_next_sct (ini, NULL, "psg")) == NULL) {
+		return;
+	}
+
+	ini_get_string (sct, "driver", &drv, NULL);
+	ini_get_string (sct, "aym", &aym, NULL);
+	ini_get_uint32 (sct, "aym_resolution", &aymres, 250);
+	ini_get_uint32 (sct, "sample_rate", &srate, 44100);
+	ini_get_uint32 (sct, "lowpass", &lowpass, 0);
+	ini_get_bool (sct, "highpass", &highpass, 1);
+
+	pce_log_tag (MSG_INF,
+		"PSG:", "driver=%s srate=%lu lowpass=%lu highpass=%d\n",
+		(drv != NULL) ? drv : "<none>",
+		srate, lowpass, highpass
+	);
+
+	st_psg_set_srate (&sim->psg, srate);
+
+	if (st_psg_set_driver (&sim->psg, drv)) {
+		pce_log (MSG_ERR, "*** can't open sound driver (%s)\n", drv);
+	}
+
+	if (aym != NULL) {
+		pce_log_tag (MSG_INF, "PSG:", "aym=%s resolution=%lu\n",
+			aym, aymres
+		);
+
+		if (st_psg_set_aym (&sim->psg, aym)) {
+			pce_log (MSG_ERR, "*** can't open aym file (%s)\n", aym);
+		}
+	}
+
+	st_psg_set_aym_resolution (&sim->psg, aymres);
+
+	st_psg_set_lowpass (&sim->psg, lowpass);
+	st_psg_set_highpass (&sim->psg, highpass);
 }
 
 static
@@ -531,6 +586,7 @@ void st_setup_dma (atari_st_t *sim, ini_sct_t *ini)
 	st_dma_set_memory (&sim->dma, sim->mem);
 	st_dma_set_fdc (&sim->dma, &sim->fdc.wd179x);
 	st_dma_set_acsi (&sim->dma, &sim->acsi);
+	st_dma_set_address_mask (&sim->dma, mem_blk_get_size (sim->ram) - 1);
 }
 
 static
@@ -576,11 +632,37 @@ void st_setup_video (atari_st_t *sim, ini_sct_t *ini)
 	st_video_set_vb_fct (sim->video, sim, st_set_vb);
 	st_video_set_frame_skip (sim->video, skip);
 
-	if (sim->trm != NULL) {
-		st_video_set_terminal (sim->video, sim->trm);
+	mem_add_blk (sim->mem, &sim->video->reg, 0);
+}
+
+static
+void st_setup_viking (atari_st_t *sim, ini_sct_t *ini)
+{
+	int       viking, boot;
+	ini_sct_t *sct;
+
+	sim->video_viking = 0;
+	sim->viking = NULL;
+
+	sct = ini_next_sct (ini, NULL, "system");
+
+	ini_get_bool (sct, "viking", &viking, 0);
+	ini_get_bool (sct, "viking_boot", &boot, 0);
+
+	if (viking == 0) {
+		return;
 	}
 
-	mem_add_blk (sim->mem, &sim->video->reg, 0);
+	sim->video_viking = boot;
+
+	pce_log_tag (MSG_INF, "VIKING:", "addr=0xc00000 boot=%d\n", boot);
+
+	if ((sim->viking = st_viking_new (0xc00000)) == NULL) {
+		return;
+	}
+
+	st_viking_set_memory (sim->viking, sim->mem);
+	st_viking_set_input_clock (sim->viking, ST_CPU_CLOCK);
 }
 
 void st_init (atari_st_t *sim, ini_sct_t *ini)
@@ -627,10 +709,18 @@ void st_init (atari_st_t *sim, ini_sct_t *ini)
 	st_setup_dma (sim, ini);
 	st_setup_terminal (sim, ini);
 	st_setup_video (sim, ini);
+	st_setup_viking (sim, ini);
 
 	pce_load_mem_ini (sim->mem, ini);
 
 	if (sim->trm != NULL) {
+		if (sim->video_viking) {
+			st_viking_set_terminal (sim->viking, sim->trm);
+		}
+		else if (sim->video != NULL) {
+			st_video_set_terminal (sim->video, sim->trm);
+		}
+
 		trm_set_msg_trm (sim->trm, "term.title", "pce-atarist");
 	}
 
@@ -661,6 +751,7 @@ void st_free (atari_st_t *sim)
 	chr_close (sim->serport_drv);
 	chr_close (sim->parport_drv);
 	chr_close (sim->midi_drv);
+	st_viking_del (sim->viking);
 	st_video_del (sim->video);
 	trm_del (sim->trm);
 	st_acsi_free (&sim->acsi);
@@ -764,10 +855,15 @@ void st_reset (atari_st_t *sim)
 	e6850_reset (&sim->acia0);
 	e6850_reset (&sim->acia1);
 	st_acsi_reset (&sim->acsi);
+	st_psg_reset (&sim->psg);
 	st_fdc_reset (&sim->fdc);
 	st_dma_reset (&sim->dma);
 	st_kbd_reset (&sim->kbd);
 	st_video_reset (sim->video);
+
+	if (sim->viking != NULL) {
+		st_viking_reset (sim->viking);
+	}
 
 	mem_set_uint32_be (sim->mem, 0, mem_get_uint32_be (sim->mem, sim->rom_addr));
 	mem_set_uint32_be (sim->mem, 4, mem_get_uint32_be (sim->mem, sim->rom_addr + 4));
@@ -851,6 +947,8 @@ void st_clock (atari_st_t *sim, unsigned n)
 
 	st_video_clock (sim->video, n);
 
+	st_psg_clock (&sim->psg, n);
+
 	sim->clk_div[0] += n;
 
 	if (sim->clk_div[0] < 16) {
@@ -886,6 +984,10 @@ void st_clock (atari_st_t *sim, unsigned n)
 		return;
 	}
 
+	if (sim->viking != NULL) {
+		st_viking_clock (sim->viking, 8192);
+	}
+
 	if (sim->ser_buf_i >= sim->ser_buf_n) {
 		if (sim->serport_drv != NULL) {
 			sim->ser_buf_i = 0;
@@ -899,7 +1001,7 @@ void st_clock (atari_st_t *sim, unsigned n)
 		trm_check (sim->trm);
 	}
 
-	if (sim->kbd.idle) {
+	if (e6850_receive_ready (&sim->acia0)) {
 		unsigned char val;
 
 		if (st_kbd_buf_get (&sim->kbd, &val) == 0) {

@@ -5,7 +5,7 @@
 /*****************************************************************************
  * File name:   src/utils/pce-img/pce-img.c                                  *
  * Created:     2005-11-29 by Hampa Hug <hampa@hampa.ch>                     *
- * Copyright:   (C) 2005-2013 Hampa Hug <hampa@hampa.ch>                     *
+ * Copyright:   (C) 2005-2014 Hampa Hug <hampa@hampa.ch>                     *
  *****************************************************************************/
 
 /*****************************************************************************
@@ -72,8 +72,13 @@ void print_help (void)
 	);
 
 	fputs (
-		"\nfile names: <format>:<name>\n"
-		"formats:    raw, pce, dosemu, psi, qed\n",
+		"\ncommands:\n"
+		"  commit   Commit changes in COW files\n"
+		"  convert  Convert images\n"
+		"  cow      Create COW files\n"
+		"  create   Create images\n"
+		"\nformats:\n"
+		"  dosemu, img, pce, psi, qed\n",
 		stdout
 	);
 
@@ -85,7 +90,7 @@ void print_version (void)
 	fputs (
 		"pce-img version " PCE_VERSION_STR
 		"\n\n"
-		"Copyright (C) 2005-2013 Hampa Hug <hampa@hampa.ch>\n",
+		"Copyright (C) 2005-2014 Hampa Hug <hampa@hampa.ch>\n",
 		stdout
 	);
 
@@ -268,6 +273,10 @@ int dsk_create (const char *name, unsigned type)
 		return (1);
 	}
 
+	if (par_n == 0) {
+		par_n = (unsigned long) par_c * par_h * par_s;
+	}
+
 	switch (type) {
 	case DSK_RAW:
 		r = dsk_img_create (name, par_n, par_ofs);
@@ -408,7 +417,7 @@ disk_t *dsk_cow (const char *name, disk_t *dsk)
 		return (NULL);
 	}
 
-	print_disk_info (dsk, name);
+	print_disk_info (cow, name);
 
 	return (cow);
 }

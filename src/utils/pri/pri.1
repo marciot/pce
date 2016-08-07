@@ -1,4 +1,4 @@
-.TH PRI 1 "2013-08-19" "HH" "pce"
+.TH PRI 1 "2015-07-22" "HH" "pce"
 \
 .SH NAME
 pri \- convert and modify PCE raw image files
@@ -71,6 +71,17 @@ Using this options prints one line per track.
 List all tracks in the current image or in the next image loaded.
 \
 .TP
+.BI "-m, --merge " filename
+Load an image from \fIfilename\fR and copy all tracks that are not
+in the current image into the current image.
+\
+.TP
+.BI "-M --merge-overwrite " filename
+Load an image from \fIfilename\fR and copy all tracks into the
+current image. Tracks that exist in both images will be overwritten
+in the current image.
+\
+.TP
 .BI "-o, --output " filename
 Set the output file name. Before exiting, the current image will
 be written to this file.
@@ -104,9 +115,15 @@ Save the current image comment to \fIfilename\fR.
 Set the image comment to \fItext\fR.
 .TP
 .BI "decode " "type filename"
-Decode the image and save it as a pri sector image to \fIfilename\fR.
+Decode the image and save it as a psi sector image to \fIfilename\fR.
 Valid decode types are:
 .RS
+.TP
+.B auto
+Try to decode each track as mfm, fm and gcr.
+.TP
+.B fm
+IBM FM
 .TP
 .B gcr
 Apple Macintosh GCR
@@ -124,10 +141,35 @@ Remove odd numbered tracks.
 .B "double-step-even"
 Remove even numbered tracks.
 .TP
+.BI "event-add " "type position value"
+Add a new event of type \fItype\fR at bit position \fIposition\fR with
+value \fIvalue\fR on all selected tracks. The event type can be
+specified as a numerical value or as a type name.
+.TP
+.B "event-clear"
+Clear all events of all types from the selected tracks.
+.TP
+.BI "event-del " "type ( \fB@\fIindex1[-index2] | offset1[-offset2] | \fBall\fI)"
+Delete events from the selected tracks. The type can be specified as
+a numerical value, as a type name or as \fBall\fR. The range specifies
+a range of event indices as reported by \fBevent-list\fR, a
+range of bit offsets, or \fBall\fR.
+.TP
+.BI "event-list " "type ( \fB@\fIindex1[-index2] | offset1[-offset2] | \fBall\fI)"
+List events from the selected tracks. The type can be specified as
+a numerical value, as a type name or as \fBall\fR. The range specifies
+a range of event indices, a range of bit offsets, or \fBall\fR.
+.TP
 .BI "encode " "type filename"
-Load a pri sector image from \fIfilename\fR and encode it.
+Load a psi sector image from \fIfilename\fR and encode it.
 Valid encode types are:
 .RS
+.TP
+.B auto
+Automatically determine the encoding for each track
+.TP
+.B fm
+IBM FM
 .TP
 .B gcr
 Apple Macintosh GCR
@@ -136,14 +178,40 @@ Apple Macintosh GCR
 IBM MFM
 .RE
 .TP
+.B "half-step"
+Duplicate all tracks. This is the reverse of double-step.
+.TP
 .B info
 Print information about the current image (same as \fB-f\fR).
+.TP
+.BI "mfm-align-am " "what pos"
+Rotate the track such that the first address mark of type \fIwhat\fR on
+the track is at bit position \fIpos\fR. Possible values for \fIwhat\fR are:
+.RS
+.TP
+.B "all"
+All address mark types
+.TP
+.B "iam"
+Index address marks
+.TP
+.B "idam"
+ID address marks
+.TP
+.B "dam"
+Data address marks
+.PP
+Multiple types can be combined by joining them with a '+' or a '-' sign.
+For example, the type \fBall-iam\fR specifies all address mark types except
+index address marks.
+.RE
 .TP
 .B new
 Create new tracks.
 .TP
-.BI "rotate " bits
-Rotate all selected tracks left by \fIbits\fR bits.
+.BI "rotate " cnt
+Rotate all selected tracks left by \fIcnt\fR bits. If \fIcnt\fR
+is negative, the track is rotated right.
 .TP
 .BI "save " filename
 Save all selected tracks to \fIfilename\fR. The contents of the
@@ -180,7 +248,32 @@ Set the GAP3 length in bytes. The default is 80.
 .BI "mfm-gap4a " integer
 Set the GAP4A length in bytes. The default is 96.
 .TP
+.BI "mfm-min-size " integer
+Set the minimal sector size when decoding MFM.
+.TP
 .BI "mfm-track-size " integer
+Set the track size in bits.
+.TP
+.BI "fm-auto-gap3 " boolean
+Automatically set the GAP3 length. The default is true.
+.TP
+.BI "fm-clock " integer
+Set the FM clock rate (this is twice the data rate). The default is
+250000, suitable for single density disks.
+.TP
+.BI "fm-iam " boolean
+If false, skip the index address mark. The default is false.
+.TP
+.BI "fm-gap1 " integer
+Set the GAP1 length in bytes. The default is 26.
+.TP
+.BI "fm-gap3 " integer
+Set the GAP3 length in bytes. The default is 27.
+.TP
+.BI "fm-gap4a " integer
+Set the GAP4A length in bytes. The default is 40.
+.TP
+.BI "fm-track-size " integer
 Set the track size in bits.
 .RE
 \
@@ -191,6 +284,14 @@ Select tracks. This is the same as using the \fB-c\fR and \fB-h\fR options.
 .TP
 .B "-v, --verbose"
 Enable verbose operation.
+\
+.TP
+.B "-x, --invert"
+Invert the selection.
+\
+.TP
+.B "-z, --clear"
+Clear the selection.
 \
 .TP
 .B --help

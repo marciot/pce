@@ -5,7 +5,7 @@
 /*****************************************************************************
  * File name:   src/chipset/e6850.c                                          *
  * Created:     2013-05-31 by Hampa Hug <hampa@hampa.ch>                     *
- * Copyright:   (C) 2013 Hampa Hug <hampa@hampa.ch>                          *
+ * Copyright:   (C) 2013-2015 Hampa Hug <hampa@hampa.ch>                     *
  *****************************************************************************/
 
 /*****************************************************************************
@@ -83,6 +83,10 @@ void e6850_set_irq (e6850_t *acia, int val)
 
 	if (acia->irq_val != val) {
 		acia->irq_val = val;
+
+#if DEBUG_ACIA >= 2
+		fprintf (stderr, "ACIA: irq = %d\n", val);
+#endif
 
 		if (acia->irq_fct != NULL) {
 			acia->irq_fct (acia->irq_ext, acia->irq_val);
@@ -166,6 +170,8 @@ unsigned char e6850_get_status (e6850_t *acia)
 
 unsigned char e6850_get_data (e6850_t *acia)
 {
+	e6850_set_irq (acia, 0);
+
 	acia->sr &= ~E6850_SR_RDRF;
 
 	e6850_check_int (acia);
@@ -233,6 +239,8 @@ void e6850_set_control (e6850_t *acia, unsigned char val)
 
 void e6850_set_data (e6850_t *acia, unsigned char val)
 {
+	e6850_set_irq (acia, 0);
+
 	acia->tdr = val;
 	acia->sr &= ~E6850_SR_TDRE;
 
@@ -287,6 +295,11 @@ void e6850_set_uint16 (e6850_t *acia, unsigned long addr, unsigned short val)
 
 void e6850_set_uint32 (e6850_t *acia, unsigned long addr, unsigned long val)
 {
+}
+
+int e6850_receive_ready (const e6850_t *acia)
+{
+	return ((acia->sr & E6850_SR_RDRF) == 0);
 }
 
 void e6850_receive (e6850_t *acia, unsigned char val)

@@ -5,7 +5,7 @@
 /*****************************************************************************
  * File name:   src/utils/pce-img/create.c                                   *
  * Created:     2013-01-14 by Hampa Hug <hampa@hampa.ch>                     *
- * Copyright:   (C) 2013 Hampa Hug <hampa@hampa.ch>                          *
+ * Copyright:   (C) 2013-2014 Hampa Hug <hampa@hampa.ch>                     *
  *****************************************************************************/
 
 /*****************************************************************************
@@ -33,6 +33,7 @@
 
 
 static pce_option_t opts_create[] = {
+	{ '?', 0, "help", NULL, "Print usage information" },
 	{ 'c', 1, "cylinders", "int", "Set the number of cylinders [0]" },
 	{ 'C', 1, "min-cluster-size", "int", "Set the minimum cluster size for QED [0]" },
 	{ 'f', 1, "offset", "int", "Set the data offset [0]" },
@@ -41,6 +42,7 @@ static pce_option_t opts_create[] = {
 	{ 'm', 1, "megabytes", "int", "Set the disk size in megabytes [0]" },
 	{ 'n', 1, "size", "int", "Set the disk size in 512 byte blocks [0]" },
 	{ 'o', 1, "output", "string", "Set the output file name [stdout]" },
+	{ 'O', 1, "output-type", "string", "Set the output file type [auto]" },
 	{ 'q', 0, "quiet", NULL, "Be quiet [no]" },
 	{ 's', 1, "sectors", "int", "Set the number of sectors per track [0]" },
 	{ 'w', 1, "cow", "string", "Add a COW file" },
@@ -119,6 +121,12 @@ int main_create (int argc, char **argv)
 
 		case 'o':
 			if ((out = dsk_open_out (optarg[0], out, -1)) == NULL) {
+				return (1);
+			}
+			break;
+
+		case 'O':
+			if (pce_set_type_out (optarg[0])) {
 				return (1);
 			}
 			break;
