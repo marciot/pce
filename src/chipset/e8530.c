@@ -887,6 +887,11 @@ void e8530_set_wr15 (e8530_t *scc, unsigned chn, unsigned char val)
 
 void e8530_set_reg (e8530_t *scc, unsigned chn, unsigned reg, unsigned char val)
 {
+#ifdef EMSCRIPTEN
+	EM_ASM_({
+		e8530_set_reg_js($0,$1,$2,$3)
+	}, scc, chn, reg, val);
+#endif
 	chn &= 1;
 
 #if DEBUG_SCC
