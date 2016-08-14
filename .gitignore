@@ -5,3 +5,8 @@ pcejs-build-config.json
 build/
 build-native/
 pce-js/
+*.bc
+*.o
+*.a
+*.js
+*.mem
