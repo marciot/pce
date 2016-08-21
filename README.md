@@ -17,7 +17,7 @@ Hampa Hug's [PCE](http://www.hampa.ch/pce) which is written in ANSI C.
 
 1. The main loop is modified so that it can be run by Emscripten.
 2. Exposed to JavaScript the ability to send messages to the emulator via `*_set_msg` to allow for on-the-fly disk insertion.
-3. Exposed some of the e8530.c routines to JavaScript to support experiments with LocalTalk emulation
+3. Modified src/chipset/e8530.c to support LocalTalk emulation (based on [Mike Forte's](http://mfort.net/Mini_vMac_LT/Mini_vMac_LT.html) SDLC implementation)
 
 ## How does this code differ from James Friend's PCE.js?
 
