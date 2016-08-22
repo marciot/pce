@@ -73,7 +73,7 @@ mv src/arch/atarist/pce-atarist src/arch/pce-atarist.bc
 
 EMCC_OPTS="$OPTIMIZATION_FLAGS"
 
-emcc src/arch/pce-macplus.bc $EMCC_OPTS -o pce-macplus.js -s EXPORTED_FUNCTIONS='["_main","_mac_get_sim","_mac_set_msg","_e8530_set_reg","_e8530_get_reg","_e8530_set_rts","_e8530_set_dcd","_e8530_set_cts"]'
+emcc src/arch/pce-macplus.bc $EMCC_OPTS -o pce-macplus.js -s EXPORTED_FUNCTIONS='["_main","_mac_get_sim","_mac_set_msg","_e8530_sdlc_frame_available"]'
 emcc src/arch/pce-rc759.bc   $EMCC_OPTS -o pce-rc759.js   -s EXPORTED_FUNCTIONS='["_main","_rc_get_sim","_rc759_set_msg"]'
 emcc src/arch/pce-ibmpc.bc   $EMCC_OPTS -o pce-ibmpc.js   -s EXPORTED_FUNCTIONS='["_main","_pc_get_sim","_pc_set_msg"]'
 emcc src/arch/pce-atarist.bc $EMCC_OPTS -o pce-atarist.js -s EXPORTED_FUNCTIONS='["_main","_st_get_sim","_st_set_msg"]'
