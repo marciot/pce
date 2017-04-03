@@ -5,7 +5,7 @@
 /*****************************************************************************
  * File name:   src/cpu/e8086/e8086.c                                        *
  * Created:     1996-04-28 by Hampa Hug <hampa@hampa.ch>                     *
- * Copyright:   (C) 1996-2014 Hampa Hug <hampa@hampa.ch>                     *
+ * Copyright:   (C) 1996-2017 Hampa Hug <hampa@hampa.ch>                     *
  *****************************************************************************/
 
 /*****************************************************************************
@@ -88,8 +88,8 @@ void e86_init (e8086_t *c)
 		c->op[i] = e86_opcodes[i];
 	}
 
-	c->clocks = 0;
-	c->instructions = 0;
+	c->clock = 0;
+	c->opcnt = 0;
 	c->delay = 0;
 }
 
@@ -414,21 +414,11 @@ unsigned e86_undefined (e8086_t *c)
 	return (1);
 }
 
-unsigned long long e86_get_clock (e8086_t *c)
-{
-	return (c->clocks);
-}
-
-unsigned long long e86_get_opcnt (e8086_t *c)
-{
-	return (c->instructions);
-}
-
 void e86_reset (e8086_t *c)
 {
 	unsigned i;
 
-	c->instructions = 0;
+	c->opcnt = 0;
 
 	c->addr_mask = 0xfffff;
 
@@ -455,8 +445,9 @@ void e86_reset (e8086_t *c)
 
 void e86_execute (e8086_t *c)
 {
-	unsigned cnt;
-	char     irq;
+	unsigned       cnt;
+	unsigned short flg;
+	char           irq;
 
 	if (c->halt) {
 		e86_set_clk (c, 2);
@@ -473,6 +464,7 @@ void e86_execute (e8086_t *c)
 		c->cur_ip = c->ip;
 	}
 
+	flg = c->flg;
 	irq = c->irq;
 
 	c->enable_int = 1;
@@ -497,10 +489,10 @@ void e86_execute (e8086_t *c)
 		}
 	} while (c->prefix & E86_PREFIX_NEW);
 
-	c->instructions += 1;
+	c->opcnt += 1;
 
 	if (c->enable_int) {
-		if (c->flg & E86_FLG_T) {
+		if (flg & c->flg & E86_FLG_T) {
 			c->halt = 0;
 			e86_trap (c, 1);
 		}
@@ -514,11 +506,11 @@ void e86_clock (e8086_t *c, unsigned n)
 {
 	while (n >= c->delay) {
 		n -= c->delay;
-		c->clocks += c->delay;
+		c->clock += c->delay;
 		c->delay = 0;
 		e86_execute (c);
 	}
 
 	c->delay -= n;
-	c->clocks += n;
+	c->clock += n;
 }
