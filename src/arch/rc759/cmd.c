@@ -565,7 +565,7 @@ void rc759_run_emscripten (rc759_t *sim)
 	rc759_clock_discontinuity (sim);
 
 	#ifdef EMSCRIPTEN
-	emscripten_set_main_loop(rc759_run_emscripten_step, 100, 1);
+	emscripten_set_main_loop(rc759_run_emscripten_step, 0, 1);
 	#else
 	while (!sim->brk) {
 		rc759_run_emscripten_step();
