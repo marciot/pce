@@ -578,7 +578,7 @@ void st_run_emscripten (atari_st_t *sim)
 
 
 	#ifdef EMSCRIPTEN
-	emscripten_set_main_loop(st_run_emscripten_step, 100, 1);
+	emscripten_set_main_loop(st_run_emscripten_step, 0, 1);
 	#else
 	while (!sim->brk) {
 		st_run_emscripten_step();
@@ -907,6 +907,8 @@ void st_cmd_hm (cmd_t *cmd)
 		"emu.disk.commit      [<drive>]\n"
 		"emu.disk.eject       <drive>\n"
 		"emu.disk.insert      <drive>:<fname>\n"
+		"\n"
+		"emu.midi.file        <fname>\n"
 		"\n"
 		"emu.fdc.ro           <drive>\n"
 		"emu.fdc.rw           <drive>\n"

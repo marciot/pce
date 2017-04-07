@@ -3,9 +3,9 @@
  *****************************************************************************/
 
 /*****************************************************************************
- * File name:   src/arch/ibmpc/main.h                                        *
- * Created:     2001-05-01 by Hampa Hug <hampa@hampa.ch>                     *
- * Copyright:   (C) 2001-2016 Hampa Hug <hampa@hampa.ch>                     *
+ * File name:   src/utils/aym/main.h                                         *
+ * Created:     2015-05-21 by Hampa Hug <hampa@hampa.ch>                     *
+ * Copyright:   (C) 2015-2016 Hampa Hug <hampa@hampa.ch>                     *
  *****************************************************************************/
 
 /*****************************************************************************
@@ -20,29 +20,33 @@
  *****************************************************************************/
 
 
-#ifndef PCE_IBMPC_MAIN_H
-#define PCE_IBMPC_MAIN_H 1
+#ifndef AYM_MAIN_H
+#define AYM_MAIN_H 1
 
 
 #include <config.h>
 
-
-#define PCE_IBMPC_CLK0 14318184
-#define PCE_IBMPC_CLK1 (PCE_IBMPC_CLK0 / 3)
-#define PCE_IBMPC_CLK2 (PCE_IBMPC_CLK0 / 12)
-
-#define PCE_IBMPC_5150 1
-#define PCE_IBMPC_5160 2
-#define PCE_IBMPC_M24  4
+#include <drivers/sound/sound.h>
 
 
-extern const char *par_terminal;
-extern const char *par_video;
+#define AYM_MAGIC 0x41594d1a
 
 
-void sim_stop (void);
+extern const char    *arg0;
 
-void pc_log_deb (const char *msg, ...);
+extern char          par_verbose;
+
+extern unsigned long par_srate;
+
+
+unsigned long aym_get_uint32_be (const void *buf, unsigned i);
+void aym_set_uint32_be (void *buf, unsigned i, unsigned long val);
+
+int aym_decode (const char *inp, const char *out, unsigned long th, unsigned long mark);
+
+int aym_encode (const char *inp, const char *out, unsigned long th);
+
+int aym_play (const char *fname, const char *snddrv, unsigned long lp, int hp);
 
 
 #endif
